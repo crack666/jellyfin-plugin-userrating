@@ -1,0 +1,18 @@
+<div id="UserRatingConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-button">
+    <div data-role="content">
+        <div class="content-primary">
+            <h1>User Rating</h1>
+            <p>
+                Dieses Plugin schreibt <strong>nicht</strong> in die Jellyfin-Quellen.
+                Es injiziert ein Script in die Web-UI, das das vorhandene Feld
+                <code>UserData.Rating</code> anzeigt, sortierbar macht und auf der Detailseite setzbar macht.
+            </p>
+            <ul>
+                <li>Sortierung: Eintrag <em>Eigene Bewertung</em> im Sort-Menü (clientseitig, weil der Server 10.11 UserRating ignoriert)</li>
+                <li>Poster: Note beim Hover auf dem Cover</li>
+                <li>Detailseite: Note neben der Community-Bewertung, klickbare Sterne 1–10</li>
+            </ul>
+            <p>Nach der Installation: Jellyfin neu starten, Web-UI hart neu laden (Strg+F5).</p>
+        </div>
+    </div>
+</div>

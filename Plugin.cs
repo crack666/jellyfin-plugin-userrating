@@ -1,0 +1,44 @@
+using System.Globalization;
+using Jellyfin.Plugin.UserRating.Configuration;
+using MediaBrowser.Common.Configuration;
+using MediaBrowser.Common.Plugins;
+using MediaBrowser.Model.Plugins;
+using MediaBrowser.Model.Serialization;
+
+namespace Jellyfin.Plugin.UserRating;
+
+/// <summary>
+/// Surfaces UserData.Rating in jellyfin-web without forking Jellyfin.
+/// </summary>
+public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
+{
+    public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
+        : base(applicationPaths, xmlSerializer)
+    {
+        Instance = this;
+    }
+
+    public override string Name => "User Rating";
+
+    public override Guid Id => Guid.Parse("7e3c9a12-4b8f-4d71-9e2a-1c5f8b0d4a33");
+
+    public override string Description =>
+        "Shows, sorts, and edits the per-user UserData.Rating field in the stock web UI.";
+
+    public static Plugin? Instance { get; private set; }
+
+    public IEnumerable<PluginPageInfo> GetPages()
+    {
+        return
+        [
+            new PluginPageInfo
+            {
+                Name = Name,
+                EmbeddedResourcePath = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0}.Configuration.configPage.html",
+                    GetType().Namespace)
+            }
+        ];
+    }
+}
