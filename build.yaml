@@ -1,6 +1,6 @@
 name: "User Rating"
 guid: "7e3c9a12-4b8f-4d71-9e2a-1c5f8b0d4a33"
-version: "1.0.0.1"
+version: "1.0.0.2"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 overview: "Show, sort, and edit UserData.Rating in the stock Jellyfin web UI"
@@ -13,4 +13,6 @@ owner: "crack"
 artifacts:
 - "Jellyfin.Plugin.UserRating.dll"
 changelog: >
-  initial release for Jellyfin 10.11
+  1.0.0.2: click-to-edit detail rating, reverse dropdown, live list badges, GitHub credit
+  1.0.0.1: classic radio sort menu, gzip-safe injection
+  1.0.0.0: initial release for Jellyfin 10.11

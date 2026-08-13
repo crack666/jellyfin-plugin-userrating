@@ -192,15 +192,14 @@
         var label = value == null ? '–' : String(n);
         var html = '<span class="ur-stars' + (interactive ? ' ur-stars-edit' : '') + '" data-urid="' + (itemId || '') + '">';
         html += '<span class="material-icons starIcon star ur-icon" aria-hidden="true"></span>';
+        html += '<span class="ur-value">' + label + '</span>';
         if (interactive) {
-            html += '<select class="ur-select" data-urid="' + (itemId || '') + '" title="Eigene Bewertung">';
-            html += '<option value="">–</option>';
-            for (var i = 1; i <= 10; i++) {
+            html += '<select class="ur-select" data-urid="' + (itemId || '') + '" title="Eigene Bewertung" aria-label="Eigene Bewertung">';
+            for (var i = 10; i >= 1; i--) {
                 html += '<option value="' + i + '"' + (i === n ? ' selected' : '') + '>' + i + '</option>';
             }
+            html += '<option value=""' + (value == null ? ' selected' : '') + '>–</option>';
             html += '</select>';
-        } else {
-            html += '<span class="ur-value">' + label + '</span>';
         }
         html += '</span>';
         return html;
@@ -212,16 +211,28 @@
             return;
         }
         var val = ratings[id];
-        if (val == null) {
+        var overlay = card.querySelector('.cardOverlayContainer');
+        if (!overlay) {
             return;
         }
-        var overlay = card.querySelector('.cardOverlayContainer');
-        if (overlay && !overlay.querySelector('.ur-overlay-badge')) {
-            var badge = document.createElement('div');
-            badge.className = 'ur-overlay-badge';
-            badge.innerHTML = starHtml(val, false, id);
-            overlay.appendChild(badge);
+        var badge = overlay.querySelector('.ur-overlay-badge');
+        if (val == null) {
+            if (badge) {
+                badge.remove();
+            }
+            return;
         }
+        var html = starHtml(val, false, id);
+        if (badge) {
+            if (badge.innerHTML !== html) {
+                badge.innerHTML = html;
+            }
+            return;
+        }
+        badge = document.createElement('div');
+        badge.className = 'ur-overlay-badge';
+        badge.innerHTML = html;
+        overlay.appendChild(badge);
     }
 
     function decorateDetails() {
@@ -236,7 +247,7 @@
         var existing = misc.querySelector('.ur-detail');
         var val = ratings[itemId];
         if (existing) {
-            if (existing.contains(document.activeElement)) {
+            if (existing.contains(document.activeElement) || existing.querySelector('.ur-editing')) {
                 return;
             }
             var next = starHtml(val, true, itemId);
@@ -536,6 +547,16 @@
         }).then(function (data) {
             ratings[itemId] = rating;
             fullCache = { key: '', items: null, inflight: null };
+            document.querySelectorAll('.ur-stars[data-urid="' + itemId + '"] .ur-value').forEach(function (el) {
+                el.textContent = String(rating);
+            });
+            document.querySelectorAll('.ur-stars-edit[data-urid="' + itemId + '"]').forEach(function (el) {
+                el.classList.remove('ur-editing');
+                var sel = el.querySelector('.ur-select');
+                if (sel) {
+                    sel.value = String(rating);
+                }
+            });
             decorateAll();
             return data;
         });
@@ -543,18 +564,45 @@
 
     document.addEventListener('click', function (ev) {
         var pick = ev.target.closest && ev.target.closest('.ur-pick');
-        if (!pick) {
+        if (pick) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            var wrap = pick.closest('.ur-stars');
+            var itemId = wrap && wrap.getAttribute('data-urid');
+            var rating = Number(pick.getAttribute('data-rating'));
+            if (itemId && rating) {
+                postRating(itemId, rating);
+            }
+            return;
+        }
+        var stars = ev.target.closest && ev.target.closest('.ur-stars-edit');
+        if (!stars || ev.target.closest('.ur-select')) {
             return;
         }
         ev.preventDefault();
         ev.stopPropagation();
-        var wrap = pick.closest('.ur-stars');
-        var itemId = wrap && wrap.getAttribute('data-urid');
-        var rating = Number(pick.getAttribute('data-rating'));
-        if (!itemId || !rating) {
+        stars.classList.add('ur-editing');
+        var sel = stars.querySelector('.ur-select');
+        if (!sel) {
             return;
         }
-        postRating(itemId, rating);
+        sel.focus();
+        if (typeof sel.showPicker === 'function') {
+            try {
+                sel.showPicker();
+            } catch (e) { /* ignore */ }
+        }
+    }, true);
+
+    document.addEventListener('focusout', function (ev) {
+        var t = ev.target;
+        if (!t || !t.classList || !t.classList.contains('ur-select')) {
+            return;
+        }
+        var stars = t.closest('.ur-stars-edit');
+        if (stars) {
+            stars.classList.remove('ur-editing');
+        }
     }, true);
 
     document.addEventListener('change', function (ev) {
@@ -563,6 +611,10 @@
             return;
         }
         if (t.classList && t.classList.contains('ur-select')) {
+            var stars = t.closest('.ur-stars-edit');
+            if (stars) {
+                stars.classList.remove('ur-editing');
+            }
             var itemId = t.getAttribute('data-urid');
             var rating = Number(t.value);
             if (itemId && rating) {
@@ -590,7 +642,9 @@
             '.ur-icon{font-size:1.2em;margin-right:2px;color:#7cb7ff;}',
             '.ur-value{font-weight:600;}',
             '.ur-stars-edit{position:relative;cursor:pointer;}',
-            '.ur-select{background:rgba(0,0,0,.35);color:inherit;border:1px solid rgba(255,255,255,.28);border-radius:4px;margin-left:2px;cursor:pointer;font:inherit;font-weight:600;padding:0 4px;}',
+            '.ur-stars-edit .ur-select{display:none;background:rgba(0,0,0,.35);color:inherit;border:1px solid rgba(255,255,255,.28);border-radius:4px;margin-left:2px;cursor:pointer;font:inherit;font-weight:600;padding:0 4px;}',
+            '.ur-stars-edit.ur-editing .ur-select{display:inline-block;}',
+            '.ur-stars-edit.ur-editing .ur-value{display:none;}',
             '.ur-picker{display:none;position:absolute;left:0;top:120%;z-index:20;background:#1c1c1c;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px;gap:2px;}',
             '.ur-stars-edit:hover .ur-picker,.ur-stars-edit:focus-within .ur-picker{display:flex;}',
             '.ur-pick{min-width:22px;height:22px;border:0;background:transparent;color:#ddd;cursor:pointer;border-radius:3px;}',
@@ -604,6 +658,9 @@
 
     injectCss();
     installFetchHook();
+
+    window.addEventListener('hashchange', scheduleDecorate);
+    window.addEventListener('popstate', scheduleDecorate);
 
     var obs = new MutationObserver(function () {
         scheduleDecorate();
