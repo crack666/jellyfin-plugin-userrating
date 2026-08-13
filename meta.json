@@ -1,0 +1,16 @@
+{
+  "category": "General",
+  "changelog": "1.1.0.2: unmatched IMDb titles sorted by rating. IMDb CSV import, sort, poster badge, detail picker.",
+  "description": "Personal UserData.Rating in the stock web UI: sort, poster badge, 10-1 picker, IMDb CSV import. https://github.com/crack666/jellyfin-plugin-userrating",
+  "guid": "7e3c9a12-4b8f-4d71-9e2a-1c5f8b0d4a33",
+  "name": "User Rating",
+  "overview": "Personal ratings in the stock Jellyfin web UI, plus IMDb CSV import",
+  "owner": "crack666",
+  "targetAbi": "10.11.0.0",
+  "timestamp": "2026-08-13T18:36:00.0000000Z",
+  "version": "1.1.0.2",
+  "status": "Active",
+  "autoUpdate": false,
+  "imagePath": "",
+  "assemblies": []
+}

@@ -1,26 +1,52 @@
 # Jellyfin Plugin: User Rating
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 Community plugin for **Jellyfin 10.11**. No fork of `jellyfin/jellyfin-web`.
 
-Repository: **https://github.com/crack666/jellyfin-plugin-userrating**
+**https://github.com/crack666/jellyfin-plugin-userrating**
 
-Reads and writes the existing per-user field `UserData.Rating` (the same field an IMDb ratings CSV import fills).
+Uses the existing per-user field `UserData.Rating` — the same value Jellyfin already stores. Nothing extra in the database.
 
-## What the web UI can do
+## Features
 
-1. **Sort** by personal rating — entry **Eigene Bewertung** in the sort menu.
-   - Classic layout: radio dialog from `libraryBrowser.showSortMenu` (`movies.js`).
-   - Also covers `select.selectSortBy` and the experimental MUI `SortButton`.
-   - Jellyfin 10.11 ignores `SortBy=UserRating` on the server. The plugin loads the library and sorts **in the browser**.
-2. **Poster hover:** badge on `.cardOverlayContainer`.
-3. **Detail page:** personal score next to the community stars. Click the score to open a dropdown (10 → 1 → –).
-4. **Set:** `POST /Users/{id}/Items/{itemId}/UserData` with `{ "Rating": n }`. List badges update without a full reload.
+- **Sort** by personal rating (menu entry *Eigene Bewertung*). Jellyfin 10.11 ignores `SortBy=UserRating` on the server, so the plugin loads the library and sorts in the browser.
+- **Poster hover:** personal score on the cover overlay.
+- **Detail page:** score next to the community stars. Click it for a 10→1 picker.
+- **IMDb import:** Dashboard → Plugins → User Rating. Upload an IMDb *Your Ratings* CSV (`Const` + `Your Rating`). Dry-run first. Match is `ProviderIds.Imdb`. Only `UserData.Rating` is written; play state is left alone. Unmatched titles are listed, highest score first.
 
-## Credit
+## Requirements
 
-Built by [crack666](https://github.com/crack666) with **Cursor / Grok 4.6** — a working plugin in a short session, against stock Jellyfin 10.11.
+- Jellyfin **10.11** (built against ABI 10.11.0, tested on 10.11.11)
+- .NET 9 to build from source
+
+## Install
+
+1. Download the latest `Jellyfin.Plugin.UserRating_*.zip` from [Releases](https://github.com/crack666/jellyfin-plugin-userrating/releases), or build (below) and zip **only** `Jellyfin.Plugin.UserRating.dll`.
+2. Dashboard → Plugins → Catalog → gear → **Install from file** (or copy the DLL into a folder named `User Rating_<version>` under the server `plugins` directory).
+3. Restart Jellyfin.
+4. Hard-reload the web UI (**Ctrl+F5**).
+
+Sideloaded plugins show a catalog warning; that is expected until this lives in the official plugin repo.
+
+### TrueNAS SCALE (ix-jellyfin)
+
+Plugins live in the container at `/config/plugins/` (host dataset, UID 568). Example:
+
+`/mnt/…/apps/jellyfin/config/plugins/User Rating_1.1.0.2/Jellyfin.Plugin.UserRating.dll`
+
+Restart the app after copying. Do not rewrite compressed `/web` HTML by hand — the plugin decompresses gzip/br before injecting its script.
+
+## IMDb CSV
+
+On [imdb.com](https://www.imdb.com): **Your Ratings** → Export. Required columns:
+
+- `Const` (e.g. `tt0133093`)
+- `Your Rating` (1–10)
+
+Optional but shown in the unmatched table: `Title`, `Year`, `Title Type`.
+
+Always run **Prüfen (Dry-Run)** before **Importieren**.
 
 ## Build
 
@@ -28,34 +54,20 @@ Built by [crack666](https://github.com/crack666) with **Cursor / Grok 4.6** — 
 dotnet build -c Release
 ```
 
-DLL: `bin\Release\net9.0\Jellyfin.Plugin.UserRating.dll`
+Output: `bin/Release/net9.0/Jellyfin.Plugin.UserRating.dll`
 
-Zip for Jellyfin: only the DLL in `Jellyfin.Plugin.UserRating_1.0.0.2.zip`.
+Zip that DLL as `Jellyfin.Plugin.UserRating_1.1.0.2.zip` for Dashboard install-from-file.
 
-## Install (TrueNAS ix-jellyfin)
+## Limitations
 
-Plugins directory in the container: `/config/plugins/`  
-Host: `/mnt/DataPool/apps/jellyfin/config/plugins/User Rating_1.0.0.2/` (UID 568).
+- Sort is client-side (server 10.11 does not honor `UserRating`).
+- Injected web-UI strings are currently German.
+- Not in the official Jellyfin plugin catalog yet (manual install).
 
-1. Put the DLL + `meta.json` in that folder.
-2. Restart the Jellyfin app.
-3. Dashboard → Plugins → User Rating.
-4. Hard-reload the web UI (Ctrl+F5).
+## Credit
 
-Script injection buffers **only** `GET /web` and `GET /web/index.html`, never media/API streams.
-Gzip/Brotli is decompressed first; rewriting compressed bytes blanks the UI (`Accept-Encoding`).
-
-## Roadmap
-
-- IMDb ratings CSV import on the plugin settings page (same matching as the local Python importer: `Const` / `Your Rating` → `ProviderIds.Imdb`).
-
-## Source notes (jellyfin-web v10.11.11)
-
-- Sort experimental: `src/apps/experimental/components/library/SortButton.tsx`
-- Sort classic radios: `src/scripts/libraryBrowser.js` → `showSortMenu`
-- Community stars: `src/components/mediainfo/mediainfo.js` → `getStarIconsHtml`
-- Cover hover: `src/components/cardbuilder/cardBuilder.js` → `.cardOverlayContainer`
+Built by [crack666](https://github.com/crack666) with **Cursor / Grok 4.6**, against stock Jellyfin 10.11.
 
 ## License
 
-GPL-3.0-or-later (required because the plugin links Jellyfin).
+GPL-3.0-or-later (required: the plugin links Jellyfin).

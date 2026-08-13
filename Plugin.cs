@@ -23,7 +23,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public override Guid Id => Guid.Parse("7e3c9a12-4b8f-4d71-9e2a-1c5f8b0d4a33");
 
     public override string Description =>
-        "Shows, sorts, and edits UserData.Rating in the stock web UI. https://github.com/crack666/jellyfin-plugin-userrating";
+        "Personal UserData.Rating in the stock web UI: sort, poster badge, 10–1 picker, IMDb CSV import. https://github.com/crack666/jellyfin-plugin-userrating";
 
     public static Plugin? Instance { get; private set; }
 
@@ -37,6 +37,14 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
                 EmbeddedResourcePath = string.Format(
                     CultureInfo.InvariantCulture,
                     "{0}.Configuration.configPage.html",
+                    GetType().Namespace)
+            },
+            new PluginPageInfo
+            {
+                Name = "UserRatingConfig.js",
+                EmbeddedResourcePath = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0}.Configuration.config.js",
                     GetType().Namespace)
             }
         ];

@@ -1,28 +1,51 @@
-<div id="UserRatingConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-button">
+<div id="UserRatingConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-button,emby-checkbox" data-controller="__plugin/UserRatingConfig.js">
     <div data-role="content">
         <div class="content-primary">
-            <h1>User Rating</h1>
-            <p>
-                Dieses Plugin schreibt <strong>nicht</strong> in die Jellyfin-Quellen.
-                Es injiziert ein Script in die Web-UI, das das vorhandene Feld
-                <code>UserData.Rating</code> anzeigt, sortierbar macht und auf der Detailseite setzbar macht.
-            </p>
-            <ul>
-                <li>Sortierung: Eintrag <em>Eigene Bewertung</em> im Sort-Menü (clientseitig, weil der Server 10.11 UserRating ignoriert)</li>
-                <li>Poster: Note beim Hover auf dem Cover</li>
-                <li>Detailseite: Note neben der Community-Bewertung — Klick öffnet das Dropdown (10 → 1)</li>
-            </ul>
-            <p>
-                Quelle und Credit:
-                <a is="emby-linkbutton" class="button-link" href="https://github.com/crack666/jellyfin-plugin-userrating" target="_blank" rel="noopener">github.com/crack666/jellyfin-plugin-userrating</a>
-                — gebaut mit Cursor / Grok 4.6.
-            </p>
-            <p>Nach der Installation: Jellyfin neu starten, Web-UI hart neu laden (Strg+F5).</p>
-            <h2>IMDb-Import</h2>
-            <p>
-                CSV-Import (IMDb ratings export) auf dieser Seite ist als Nächstes geplant.
-                Bis dahin denselben Export lokal importieren, der <code>UserData.Rating</code> befüllt.
-            </p>
+            <div class="verticalSection">
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h2 class="sectionTitle">User Rating</h2>
+                </div>
+                <p>
+                    Persönliche Bewertung (<code>UserData.Rating</code>) in der normalen Web-UI:
+                    sortieren, Cover-Badge, Note auf der Detailseite setzen.
+                    IMDb-CSV-Import auf dieser Seite. Kein Fork von jellyfin-web.
+                    <a is="emby-linkbutton" class="button-link" href="https://github.com/crack666/jellyfin-plugin-userrating" target="_blank" rel="noopener">github.com/crack666/jellyfin-plugin-userrating</a>
+                </p>
+            </div>
+
+            <div class="verticalSection">
+                <h2 class="sectionTitle">IMDb-Import</h2>
+                <p class="fieldDescription">
+                    IMDb → Your Ratings → Export. Erwartete Spalten: <strong>Const</strong> (tt…) und <strong>Your Rating</strong>.
+                    Match über <code>ProviderIds.Imdb</code>. Es wird nur die persönliche Note geschrieben, Play-Status bleibt.
+                </p>
+                <div class="inputContainer">
+                    <label class="inputLabel" for="urCsv">CSV-Datei</label>
+                    <input type="file" id="urCsv" accept=".csv,text/csv,text/plain" />
+                </div>
+                <div class="selectContainer">
+                    <label class="inputLabel" for="urUser">Benutzer</label>
+                    <select id="urUser" class="emby-select-withcolor"></select>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="urMovies" checked />
+                        <span>Filme</span>
+                    </label>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="urSeries" checked />
+                        <span>Serien</span>
+                    </label>
+                </div>
+                <div>
+                    <button is="emby-button" type="button" class="raised button-cancel" id="urDryRun">Prüfen (Dry-Run)</button>
+                    <button is="emby-button" type="button" class="raised button-submit" id="urImport">Importieren</button>
+                </div>
+                <p id="urStatus" class="fieldDescription" style="margin-top:1em;"></p>
+                <div id="urResult" class="hide"></div>
+            </div>
         </div>
     </div>
 </div>

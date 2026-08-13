@@ -1,18 +1,22 @@
 name: "User Rating"
 guid: "7e3c9a12-4b8f-4d71-9e2a-1c5f8b0d4a33"
-version: "1.0.0.2"
+version: "1.1.0.2"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
-overview: "Show, sort, and edit UserData.Rating in the stock Jellyfin web UI"
+overview: "Personal ratings in the stock Jellyfin web UI, plus IMDb CSV import"
 description: >
-  Injects into jellyfin-web without forking Jellyfin. Uses the existing
-  UserData.Rating field (e.g. imported IMDb scores). Adds a sort entry,
-  cover hover badge, and editable stars on the detail page.
+  No jellyfin-web fork. Uses UserData.Rating: sort, poster hover, editable
+  detail score, and IMDb Your Ratings CSV import (Const + Your Rating).
+  https://github.com/crack666/jellyfin-plugin-userrating
 category: "General"
-owner: "crack"
+owner: "crack666"
 artifacts:
 - "Jellyfin.Plugin.UserRating.dll"
 changelog: >
-  1.0.0.2: click-to-edit detail rating, reverse dropdown, live list badges, GitHub credit
+  1.1.0.2: unmatched IMDb titles sorted by rating descending
+  1.1.0.1: plugin settings user list (dashboard controller + /UserRating/Users)
+  1.1.0.0: IMDb ratings CSV import on the plugin settings page
+  1.0.0.3: custom 10–1 picker on the detail page
+  1.0.0.2: click-to-edit detail rating, live list badges, GitHub credit
   1.0.0.1: classic radio sort menu, gzip-safe injection
   1.0.0.0: initial release for Jellyfin 10.11

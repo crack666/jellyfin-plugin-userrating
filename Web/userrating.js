@@ -190,19 +190,50 @@
     function starHtml(value, interactive, itemId) {
         var n = value == null ? 0 : Number(value);
         var label = value == null ? '–' : String(n);
-        var html = '<span class="ur-stars' + (interactive ? ' ur-stars-edit' : '') + '" data-urid="' + (itemId || '') + '">';
+        var html = '<span class="ur-stars' + (interactive ? ' ur-stars-edit' : '') + '" data-urid="' + (itemId || '') + '" title="Eigene Bewertung">';
         html += '<span class="material-icons starIcon star ur-icon" aria-hidden="true"></span>';
         html += '<span class="ur-value">' + label + '</span>';
-        if (interactive) {
-            html += '<select class="ur-select" data-urid="' + (itemId || '') + '" title="Eigene Bewertung" aria-label="Eigene Bewertung">';
-            for (var i = 10; i >= 1; i--) {
-                html += '<option value="' + i + '"' + (i === n ? ' selected' : '') + '>' + i + '</option>';
-            }
-            html += '<option value=""' + (value == null ? ' selected' : '') + '>–</option>';
-            html += '</select>';
-        }
         html += '</span>';
         return html;
+    }
+
+    function closePicker() {
+        var menu = document.getElementById('ur-picker-menu');
+        if (menu) {
+            menu.remove();
+        }
+        document.querySelectorAll('.ur-stars-edit.ur-editing').forEach(function (el) {
+            el.classList.remove('ur-editing');
+        });
+    }
+
+    function openPicker(stars) {
+        closePicker();
+        var itemId = stars.getAttribute('data-urid');
+        if (!itemId) {
+            return;
+        }
+        stars.classList.add('ur-editing');
+        var current = ratings[itemId];
+        var rect = stars.getBoundingClientRect();
+        var menu = document.createElement('div');
+        menu.id = 'ur-picker-menu';
+        menu.className = 'ur-picker-menu';
+        for (var i = 10; i >= 1; i--) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'ur-pick';
+            btn.setAttribute('data-rating', String(i));
+            btn.setAttribute('data-urid', itemId);
+            if (Number(current) === i) {
+                btn.setAttribute('data-current', '1');
+            }
+            btn.textContent = String(i);
+            menu.appendChild(btn);
+        }
+        menu.style.left = Math.max(8, Math.round(rect.left)) + 'px';
+        menu.style.top = Math.round(rect.bottom + 4) + 'px';
+        document.body.appendChild(menu);
     }
 
     function decorateCard(card) {
@@ -547,6 +578,7 @@
         }).then(function (data) {
             ratings[itemId] = rating;
             fullCache = { key: '', items: null, inflight: null };
+            closePicker();
             document.querySelectorAll('.ur-stars[data-urid="' + itemId + '"] .ur-value').forEach(function (el) {
                 el.textContent = String(rating);
             });
@@ -567,59 +599,33 @@
         if (pick) {
             ev.preventDefault();
             ev.stopPropagation();
-            var wrap = pick.closest('.ur-stars');
-            var itemId = wrap && wrap.getAttribute('data-urid');
+            var itemId = pick.getAttribute('data-urid');
             var rating = Number(pick.getAttribute('data-rating'));
+            closePicker();
             if (itemId && rating) {
                 postRating(itemId, rating);
             }
             return;
         }
         var stars = ev.target.closest && ev.target.closest('.ur-stars-edit');
-        if (!stars || ev.target.closest('.ur-select')) {
-            return;
-        }
-        ev.preventDefault();
-        ev.stopPropagation();
-        stars.classList.add('ur-editing');
-        var sel = stars.querySelector('.ur-select');
-        if (!sel) {
-            return;
-        }
-        sel.focus();
-        if (typeof sel.showPicker === 'function') {
-            try {
-                sel.showPicker();
-            } catch (e) { /* ignore */ }
-        }
-    }, true);
-
-    document.addEventListener('focusout', function (ev) {
-        var t = ev.target;
-        if (!t || !t.classList || !t.classList.contains('ur-select')) {
-            return;
-        }
-        var stars = t.closest('.ur-stars-edit');
         if (stars) {
-            stars.classList.remove('ur-editing');
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (stars.classList.contains('ur-editing')) {
+                closePicker();
+            } else {
+                openPicker(stars);
+            }
+            return;
+        }
+        if (!ev.target.closest || !ev.target.closest('#ur-picker-menu')) {
+            closePicker();
         }
     }, true);
 
     document.addEventListener('change', function (ev) {
         var t = ev.target;
         if (!t) {
-            return;
-        }
-        if (t.classList && t.classList.contains('ur-select')) {
-            var stars = t.closest('.ur-stars-edit');
-            if (stars) {
-                stars.classList.remove('ur-editing');
-            }
-            var itemId = t.getAttribute('data-urid');
-            var rating = Number(t.value);
-            if (itemId && rating) {
-                postRating(itemId, rating);
-            }
             return;
         }
         if (t.classList && t.classList.contains('menuSortBy') && !t.closest('.ur-sort-radio')) {
@@ -642,12 +648,9 @@
             '.ur-icon{font-size:1.2em;margin-right:2px;color:#7cb7ff;}',
             '.ur-value{font-weight:600;}',
             '.ur-stars-edit{position:relative;cursor:pointer;}',
-            '.ur-stars-edit .ur-select{display:none;background:rgba(0,0,0,.35);color:inherit;border:1px solid rgba(255,255,255,.28);border-radius:4px;margin-left:2px;cursor:pointer;font:inherit;font-weight:600;padding:0 4px;}',
-            '.ur-stars-edit.ur-editing .ur-select{display:inline-block;}',
-            '.ur-stars-edit.ur-editing .ur-value{display:none;}',
-            '.ur-picker{display:none;position:absolute;left:0;top:120%;z-index:20;background:#1c1c1c;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px;gap:2px;}',
-            '.ur-stars-edit:hover .ur-picker,.ur-stars-edit:focus-within .ur-picker{display:flex;}',
-            '.ur-pick{min-width:22px;height:22px;border:0;background:transparent;color:#ddd;cursor:pointer;border-radius:3px;}',
+            '.ur-stars-edit.ur-editing{outline:1px solid #7cb7ff;border-radius:4px;}',
+            '.ur-picker-menu{position:fixed;z-index:10000;display:flex;flex-direction:column;background:#1c1c1c;border:1px solid rgba(255,255,255,.28);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:70vh;overflow:auto;}',
+            '.ur-pick{min-width:44px;height:28px;border:0;background:transparent;color:#ddd;cursor:pointer;border-radius:4px;font:inherit;font-weight:600;}',
             '.ur-pick[data-current="1"],.ur-pick:hover{background:#3e8ef7;color:#fff;}',
             '.ur-sort-wrap{margin:8px;width:200px;}',
             '.ur-sort-option{width:100%;text-align:left;padding:10px 12px;border:1px solid rgba(255,255,255,.23);border-radius:4px;background:transparent;color:inherit;cursor:pointer;}',
@@ -659,8 +662,14 @@
     injectCss();
     installFetchHook();
 
-    window.addEventListener('hashchange', scheduleDecorate);
-    window.addEventListener('popstate', scheduleDecorate);
+    window.addEventListener('hashchange', function () {
+        closePicker();
+        scheduleDecorate();
+    });
+    window.addEventListener('popstate', function () {
+        closePicker();
+        scheduleDecorate();
+    });
 
     var obs = new MutationObserver(function () {
         scheduleDecorate();
