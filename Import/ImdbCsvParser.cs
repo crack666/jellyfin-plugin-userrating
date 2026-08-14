@@ -20,7 +20,7 @@ internal static class ImdbCsvParser
         var headerLine = reader.ReadLine();
         if (string.IsNullOrWhiteSpace(headerLine))
         {
-            throw new InvalidDataException("CSV hat keine Kopfzeile.");
+            throw new InvalidDataException("CSV has no header row.");
         }
 
         var headers = SplitCsvLine(headerLine);
@@ -29,7 +29,7 @@ internal static class ImdbCsvParser
         if (constIdx < 0 || ratingIdx < 0)
         {
             throw new InvalidDataException(
-                "Kein IMDb-Ratings-Export (erwartet Spalten Const + Your Rating). Gefunden: "
+                "Not an IMDb ratings export (expected columns Const + Your Rating). Found: "
                 + string.Join(", ", headers));
         }
 

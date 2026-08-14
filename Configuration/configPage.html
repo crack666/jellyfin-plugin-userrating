@@ -5,44 +5,44 @@
                 <div class="sectionTitleContainer flex align-items-center">
                     <h2 class="sectionTitle">User Rating</h2>
                 </div>
-                <p>
-                    Persönliche Bewertung (<code>UserData.Rating</code>) in der normalen Web-UI:
-                    sortieren, Cover-Badge (Hover oder dauerhaft über den Stern in der Bibliotheksleiste),
-                    Note auf der Detailseite setzen.
-                    IMDb-CSV-Import auf dieser Seite. Kein Fork von jellyfin-web.
+                <p id="urIntro">
+                    Personal rating (<code>UserData.Rating</code>) in the stock web UI:
+                    sort, cover badge (hover or always-on via the star in the library toolbar),
+                    set the score on the detail page.
+                    IMDb CSV import on this page. No fork of jellyfin-web.
                     <a is="emby-linkbutton" class="button-link" href="https://github.com/crack666/jellyfin-plugin-userrating" target="_blank" rel="noopener">github.com/crack666/jellyfin-plugin-userrating</a>
                 </p>
             </div>
 
             <div class="verticalSection">
-                <h2 class="sectionTitle">IMDb-Import</h2>
-                <p class="fieldDescription">
-                    IMDb → Your Ratings → Export. Erwartete Spalten: <strong>Const</strong> (tt…) und <strong>Your Rating</strong>.
-                    Match über <code>ProviderIds.Imdb</code>. Es wird nur die persönliche Note geschrieben, Play-Status bleibt.
+                <h2 class="sectionTitle" id="urImportHeading">IMDb import</h2>
+                <p class="fieldDescription" id="urImportDesc">
+                    IMDb → Your Ratings → Export. Required columns: <strong>Const</strong> (tt…) and <strong>Your Rating</strong>.
+                    Match on <code>ProviderIds.Imdb</code>. Only the personal score is written; play state is left alone.
                 </p>
                 <div class="inputContainer">
-                    <label class="inputLabel" for="urCsv">CSV-Datei</label>
+                    <label class="inputLabel" for="urCsv" id="urCsvLabel">CSV file</label>
                     <input type="file" id="urCsv" accept=".csv,text/csv,text/plain" />
                 </div>
                 <div class="selectContainer">
-                    <label class="inputLabel" for="urUser">Benutzer</label>
+                    <label class="inputLabel" for="urUser" id="urUserLabel">User</label>
                     <select id="urUser" class="emby-select-withcolor"></select>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="urMovies" checked />
-                        <span>Filme</span>
+                        <span id="urMoviesLabel">Movies</span>
                     </label>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="urSeries" checked />
-                        <span>Serien</span>
+                        <span id="urSeriesLabel">Series</span>
                     </label>
                 </div>
                 <div>
-                    <button is="emby-button" type="button" class="raised button-cancel" id="urDryRun">Prüfen (Dry-Run)</button>
-                    <button is="emby-button" type="button" class="raised button-submit" id="urImport">Importieren</button>
+                    <button is="emby-button" type="button" class="raised button-cancel" id="urDryRun">Check (dry-run)</button>
+                    <button is="emby-button" type="button" class="raised button-submit" id="urImport">Import</button>
                 </div>
                 <p id="urStatus" class="fieldDescription" style="margin-top:1em;"></p>
                 <div id="urResult" class="hide"></div>

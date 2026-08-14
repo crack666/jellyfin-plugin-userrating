@@ -56,9 +56,11 @@ public class ScriptInjectionMiddleware
 
             if (!html.Contains(Marker, StringComparison.Ordinal))
             {
-                var tag =
-                    $"<script src=\"/UserRating/client.js?v={Plugin.Instance?.Version}\" defer></script>";
-                html = html.Replace("</body>", tag + "</body>", StringComparison.OrdinalIgnoreCase);
+                var v = Plugin.Instance?.Version;
+                var tags =
+                    $"<script src=\"/UserRating/i18n.js?v={v}\"></script>"
+                    + $"<script src=\"/UserRating/client.js?v={v}\" defer></script>";
+                html = html.Replace("</body>", tags + "</body>", StringComparison.OrdinalIgnoreCase);
             }
 
             var bytes = Encoding.UTF8.GetBytes(html);

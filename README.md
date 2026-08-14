@@ -12,10 +12,10 @@ Uses the existing per-user field `UserData.Rating` — the same value Jellyfin a
 
 ## Features
 
-- **Sort** by personal rating (menu entry *Eigene Bewertung*). Jellyfin 10.11 ignores `SortBy=UserRating` on the server, so the plugin loads the library and sorts in the browser.
-- **Poster badge:** personal score on the cover. Hover by default; a star button in the library toolbar keeps badges visible. Sorting by *Eigene Bewertung* turns that on automatically (toggle still wins). Preference is stored in the browser (`localStorage`).
+- **Sort** by personal rating (menu entry *Personal rating* / *Eigene Bewertung*). Jellyfin 10.11 ignores `SortBy=UserRating` on the server, so the plugin loads the library and sorts in the browser.
+- **Poster badge:** personal score on the cover. Hover by default; a star button in the library toolbar keeps badges visible. Sorting by personal rating turns that on automatically (toggle still wins). Preference is stored in the browser (`localStorage`).
 - **Detail page:** score next to the community stars. Click it for a 10→1 picker.
-- **IMDb import:** Dashboard → Plugins → User Rating. Upload an IMDb *Your Ratings* CSV (`Const` + `Your Rating`). Dry-run first. Match is `ProviderIds.Imdb`. Only `UserData.Rating` is written; play state is left alone. Unmatched titles are listed, highest score first.
+- **IMDb import:** Dashboard → Plugins → User Rating. Upload an IMDb *Your Ratings* CSV (`Const` + `Your Rating`). Dry-run first. Match is `ProviderIds.Imdb`. Only `UserData.Rating` is written; play state is left alone. Titles not in the library are listed with clickable IMDb ids, paginated (default 200 per page, size is selectable), highest score first. The title column is whatever IMDb put in the export (often localized).
 
 ## Requirements
 
@@ -35,7 +35,7 @@ Sideloaded plugins show a catalog warning; that is expected until this lives in 
 
 Plugins live in the container at `/config/plugins/` (host dataset, UID 568). Example:
 
-`/mnt/…/apps/jellyfin/config/plugins/User Rating_1.1.0.3/Jellyfin.Plugin.UserRating.dll`
+`/mnt/…/apps/jellyfin/config/plugins/User Rating_1.1.0.4/Jellyfin.Plugin.UserRating.dll`
 
 Restart the app after copying. Do not rewrite compressed `/web` HTML by hand — the plugin decompresses gzip/br before injecting its script.
 
@@ -54,7 +54,7 @@ Required columns:
 
 Optional but shown in the unmatched table: `Title`, `Year`, `Title Type`.
 
-Always run **Prüfen (Dry-Run)** before **Importieren**.
+Always run **Check (dry-run)** before **Import**.
 
 ## Build
 
@@ -64,12 +64,12 @@ dotnet build -c Release
 
 Output: `bin/Release/net9.0/Jellyfin.Plugin.UserRating.dll`
 
-Zip that DLL as `Jellyfin.Plugin.UserRating_1.1.0.3.zip` for Dashboard install-from-file.
+Zip that DLL as `Jellyfin.Plugin.UserRating_1.1.0.4.zip` for Dashboard install-from-file.
 
 ## Limitations
 
 - Sort is client-side (server 10.11 does not honor `UserRating`).
-- Injected web-UI strings are currently German.
+- UI follows Jellyfin’s display language (`html lang`): English default, plus locale files in `Web/i18n/` (de, fr, es, it, nl, pt, pt-br, pl, ru, and others). Missing keys fall back to English.
 - Not in the official Jellyfin plugin catalog yet (manual install).
 
 ## Contributing

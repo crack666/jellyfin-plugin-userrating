@@ -12,6 +12,12 @@
     var ratings = {};
     var fullCache = { key: '', items: null, inflight: null };
 
+    function t(key) {
+        return (window.UserRatingI18n && window.UserRatingI18n.t)
+            ? window.UserRatingI18n.t(key)
+            : key;
+    }
+
     function badgesAlwaysOn() {
         var v = null;
         try {
@@ -221,7 +227,7 @@
     function starHtml(value, interactive, itemId) {
         var n = value == null ? 0 : Number(value);
         var label = value == null ? '–' : String(n);
-        var html = '<span class="ur-stars' + (interactive ? ' ur-stars-edit' : '') + '" data-urid="' + (itemId || '') + '" title="Eigene Bewertung">';
+        var html = '<span class="ur-stars' + (interactive ? ' ur-stars-edit' : '') + '" data-urid="' + (itemId || '') + '" title="' + t('badgeTitle') + '">';
         html += '<span class="material-icons starIcon star ur-icon" aria-hidden="true"></span>';
         html += '<span class="ur-value">' + label + '</span>';
         html += '</span>';
@@ -400,7 +406,7 @@
             }
             var opt = document.createElement('option');
             opt.value = 'UserRating,SortName,ProductionYear';
-            opt.textContent = 'Eigene Bewertung';
+            opt.textContent = t('sort');
             var comm = Array.prototype.find.call(sel.options, function (o) {
                 return String(o.value).indexOf('CommunityRating') === 0;
             });
@@ -455,7 +461,7 @@
 
         var label = document.createElement('label');
         label.className = 'radio-label-block ur-sort-radio';
-        label.innerHTML = '<input type="radio" is="emby-radio" name="SortBy" data-id="UserRating,SortName,ProductionYear" value="UserRating_SortName,ProductionYear" class="menuSortBy" /><span>Eigene Bewertung</span>';
+        label.innerHTML = '<input type="radio" is="emby-radio" name="SortBy" data-id="UserRating,SortName,ProductionYear" value="UserRating_SortName,ProductionYear" class="menuSortBy" /><span>' + t('sort') + '</span>';
         var input = label.querySelector('input');
         if (sessionStorage.getItem(FLAG) === '1') {
             input.checked = true;
@@ -496,7 +502,7 @@
             li.classList.add('ur-sort-menuitem');
             li.setAttribute('data-value', OPTION_VALUE);
             li.setAttribute('aria-selected', sessionStorage.getItem(FLAG) === '1' ? 'true' : 'false');
-            li.textContent = 'Eigene Bewertung';
+            li.textContent = t('sort');
             li.addEventListener('click', function (ev) {
                 ev.preventDefault();
                 ev.stopPropagation();
@@ -540,7 +546,7 @@
         }
         var wrap = document.createElement('div');
         wrap.className = 'ur-sort-wrap MuiFormControl-root';
-        wrap.innerHTML = '<button type="button" class="ur-sort-option">Eigene Bewertung</button>';
+        wrap.innerHTML = '<button type="button" class="ur-sort-option">' + t('sort') + '</button>';
         var btn = wrap.querySelector('.ur-sort-option');
         btn.setAttribute('data-active', sessionStorage.getItem(FLAG) === '1' ? '1' : '0');
         btn.addEventListener('click', function (ev) {
@@ -617,8 +623,9 @@
         btn.className = mui
             ? 'ur-badge-toggle MuiButtonBase-root MuiButton-root MuiButton-text MuiButton-colorInherit'
             : 'ur-badge-toggle autoSize paper-icon-button-light';
-        btn.setAttribute('title', 'Eigene Bewertungen immer anzeigen');
-        btn.setAttribute('aria-label', 'Eigene Bewertungen immer anzeigen');
+        var tip = t('toggleAlways');
+        btn.setAttribute('title', tip);
+        btn.setAttribute('aria-label', tip);
         btn.setAttribute('aria-pressed', badgesAlwaysOn() ? 'true' : 'false');
         if (badgesAlwaysOn()) {
             btn.classList.add('ur-badge-toggle-on');

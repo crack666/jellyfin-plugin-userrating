@@ -30,8 +30,6 @@ public sealed class UnmatchedRowDto
 
 internal sealed class ImdbRatingsImporter
 {
-    private const int UnmatchedCap = 200;
-
     private readonly ILibraryManager _libraryManager;
     private readonly IUserDataManager _userDataManager;
 
@@ -113,7 +111,6 @@ internal sealed class ImdbRatingsImporter
             Unmatched = unmatched
                 .OrderByDescending(x => x.Rating)
                 .ThenBy(x => x.Title, StringComparer.CurrentCultureIgnoreCase)
-                .Take(UnmatchedCap)
                 .ToList()
         };
     }

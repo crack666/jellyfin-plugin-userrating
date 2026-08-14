@@ -1,4 +1,3 @@
-using System.Reflection;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.UserRating.Import;
 using MediaBrowser.Controller.Library;
@@ -32,11 +31,76 @@ public class UserRatingController : ControllerBase
     [HttpGet("client.js")]
     [AllowAnonymous]
     [Produces("application/javascript")]
-    public IActionResult ClientScript()
+    public IActionResult ClientScript() => EmbeddedJs("Jellyfin.Plugin.UserRating.Web.userrating.js");
+
+    [HttpGet("i18n.js")]
+    [AllowAnonymous]
+    [Produces("application/javascript")]
+    public IActionResult I18nScript()
     {
-        var asm = typeof(UserRatingController).Assembly;
-        var name = "Jellyfin.Plugin.UserRating.Web.userrating.js";
-        var stream = asm.GetManifestResourceStream(name);
+        const string prefix = "Jellyfin.Plugin.UserRating.Web.i18n.";
+        const string suffix = ".json";
+        var parts = new List<string>();
+        foreach (var name in typeof(UserRatingController).Assembly.GetManifestResourceNames()
+                     .Where(n => n.StartsWith(prefix, StringComparison.Ordinal)
+                                 && n.EndsWith(suffix, StringComparison.Ordinal))
+                     .OrderBy(n => n, StringComparer.Ordinal))
+        {
+            var locale = name[prefix.Length..^suffix.Length];
+            var json = ReadEmbeddedText(name);
+            if (string.IsNullOrWhiteSpace(json) || locale.StartsWith('_'))
+            {
+                continue;
+            }
+
+            parts.Add(System.Text.Json.JsonSerializer.Serialize(locale) + ":" + json);
+        }
+
+        if (parts.Count == 0 || !parts.Exists(p => p.StartsWith("\"en\":", StringComparison.Ordinal)))
+        {
+            return NotFound();
+        }
+
+        var js =
+            "(function(w){"
+            + "var packs={" + string.Join(",", parts) + "};"
+            + "function locale(){"
+            + "var raw=(document.documentElement.getAttribute('lang')"
+            + "||document.documentElement.getAttribute('data-culture')"
+            + "||navigator.language||'en').toLowerCase().replace('_','-');"
+            + "if(packs[raw])return raw;"
+            + "var short=raw.split('-')[0];"
+            + "if(short==='zh'){"
+            + "if(/tw|hk|hant/.test(raw))return packs['zh-tw']?'zh-tw':'en';"
+            + "return packs['zh-cn']?'zh-cn':'en';"
+            + "}"
+            + "if(short==='pt'&&/br/.test(raw))return packs['pt-br']||packs.pt||'en';"
+            + "if(packs[short])return short;"
+            + "return 'en';"
+            + "}"
+            + "w.UserRatingI18n={"
+            + "locale:locale,"
+            + "t:function(key){"
+            + "var loc=locale();"
+            + "var pack=packs[loc]||packs.en;"
+            + "return (pack&&pack[key])||packs.en[key]||key;"
+            + "},"
+            + "format:function(key,map){"
+            + "var s=this.t(key);"
+            + "if(!map){return s;}"
+            + "Object.keys(map).forEach(function(k){s=s.replace(new RegExp('\\\\{'+k+'\\\\}','g'),String(map[k]));});"
+            + "return s;"
+            + "}"
+            + "};"
+            + "})(window);";
+
+        Response.Headers.CacheControl = "no-store, no-cache";
+        return Content(js, "application/javascript");
+    }
+
+    private IActionResult EmbeddedJs(string resourceName)
+    {
+        var stream = typeof(UserRatingController).Assembly.GetManifestResourceStream(resourceName);
         if (stream is null)
         {
             return NotFound();
@@ -44,6 +108,18 @@ public class UserRatingController : ControllerBase
 
         Response.Headers.CacheControl = "no-store, no-cache";
         return File(stream, "application/javascript");
+    }
+
+    private static string? ReadEmbeddedText(string resourceName)
+    {
+        var stream = typeof(UserRatingController).Assembly.GetManifestResourceStream(resourceName);
+        if (stream is null)
+        {
+            return null;
+        }
+
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd().Trim();
     }
 
     [HttpGet("Users")]
@@ -69,18 +145,18 @@ public class UserRatingController : ControllerBase
     {
         if (file is null || file.Length == 0)
         {
-            return BadRequest("CSV-Datei fehlt.");
+            return BadRequest("CSV file is missing.");
         }
 
         if (userId == Guid.Empty)
         {
-            return BadRequest("userId fehlt.");
+            return BadRequest("userId is missing.");
         }
 
         var user = _userManager.GetUserById(userId);
         if (user is null)
         {
-            return NotFound("Benutzer nicht gefunden.");
+            return NotFound("User not found.");
         }
 
         IReadOnlyList<ImdbRatingRow> rows;
