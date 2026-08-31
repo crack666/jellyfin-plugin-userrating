@@ -1,6 +1,6 @@
 name: "User Rating"
 guid: "7e3c9a12-4b8f-4d71-9e2a-1c5f8b0d4a33"
-version: "1.1.0.5"
+version: "1.2.0.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 overview: "Personal ratings in the stock Jellyfin web UI, plus IMDb CSV import"
@@ -14,6 +14,7 @@ owner: "crack666"
 artifacts:
 - "Jellyfin.Plugin.UserRating.dll"
 changelog: >
+  1.2.0.0: personal rating can stand in for CriticRating and/or CommunityRating so native clients (Android, FireTV, webOS, Chromecast) show and sort by it - response-only, two separate toggles, settings text in all 29 locales
   1.1.0.5: download unmatched titles as CSV (current sort, all rows)
   1.1.0.4: clickable unmatched IMDb ids, paginated sortable unmatched list, UI follows Jellyfin display language (en default + de/fr/es/it/nl/pt/pl/ru/…)
   1.1.0.3: library toggle to keep cover badges visible (auto-on when sorting by personal rating)

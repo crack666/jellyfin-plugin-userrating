@@ -36,7 +36,7 @@ Sideloaded plugins show a catalog warning; that is expected until this lives in 
 
 Plugins live in the container at `/config/plugins/` (host dataset, UID 568). Example:
 
-`/mnt/…/apps/jellyfin/config/plugins/User Rating_1.1.0.5/Jellyfin.Plugin.UserRating.dll`
+`/mnt/…/apps/jellyfin/config/plugins/User Rating_1.2.0.0/Jellyfin.Plugin.UserRating.dll`
 
 Restart the app after copying. Do not rewrite compressed `/web` HTML by hand — the plugin decompresses gzip/br before injecting its script.
 
@@ -65,7 +65,7 @@ dotnet build -c Release
 
 Output: `bin/Release/net9.0/Jellyfin.Plugin.UserRating.dll`
 
-Zip that DLL as `Jellyfin.Plugin.UserRating_1.1.0.5.zip` for Dashboard install-from-file.
+Zip that DLL as `Jellyfin.Plugin.UserRating_1.2.0.0.zip` for Dashboard install-from-file.
 
 ## Native clients
 
@@ -93,7 +93,7 @@ A hack, deliberately, and reversible by design:
 - Sort is client-side (server 10.11 does not honor `UserRating`).
 - UI follows Jellyfin’s display language (`html lang`): English default, plus locale files in `Web/i18n/` (de, fr, es, it, nl, pt, pt-br, pl, ru, and others). Missing keys fall back to English.
 - Not in the official Jellyfin plugin catalog yet (manual install).
-- Out of the box only the Jellyfin **web UI** is touched (and clients embedding it, e.g. Jellyfin Media Player). Native apps need the [CriticRating override](#native-clients), which is a workaround, not a feature Jellyfin supports.
+- Out of the box only the Jellyfin **web UI** is touched (and clients embedding it, e.g. Jellyfin Media Player). Native apps need the [rating-field override](#native-clients), which is a workaround, not a feature Jellyfin supports.
 
 ## Compatibility
 
