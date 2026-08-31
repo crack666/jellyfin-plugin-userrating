@@ -9,18 +9,19 @@ using Microsoft.Extensions.Primitives;
 namespace Jellyfin.Plugin.UserRating;
 
 /// <summary>
-/// Reports the requesting user's personal rating in the <c>CriticRating</c> field of item
-/// responses, and re-sorts <c>SortBy=CriticRating</c> pages accordingly.
+/// Reports the requesting user's personal rating in the rating fields that native clients
+/// actually render, and re-sorts the matching <c>SortBy=</c> pages accordingly.
 ///
 /// Native clients — Android, Android TV, FireTV, webOS, Chromecast — know nothing about
 /// <c>UserData.Rating</c>: 10.11 has no <c>UserRating</c> member in <c>ItemSortBy</c> and no
-/// client renders the field. They do all render <c>CriticRating</c> and offer it as a sort
-/// option, so borrowing that slot is the only way to reach them at all.
+/// client renders the field. They do render <c>CriticRating</c> and <c>CommunityRating</c>
+/// and offer both as sort options, so borrowing one of those slots is the only way to reach
+/// them at all. Each field is switched on separately in the plugin settings.
 ///
-/// Deliberately response-only. Nothing is written to the database, the stored critic
-/// ratings stay intact, and turning the toggle off restores them on the next request.
+/// Deliberately response-only. Nothing is written to the database, the stored ratings stay
+/// intact, and turning a toggle off restores them on the next request.
 /// </summary>
-public class CriticRatingOverrideMiddleware
+public class RatingOverrideMiddleware
 {
     /// <summary>
     /// Upper bound on the items pulled in to re-sort one page. Mirrors the cap that
@@ -28,16 +29,10 @@ public class CriticRatingOverrideMiddleware
     /// </summary>
     private const int MaxScan = 20000;
 
-    /// <summary>
-    /// Jellyfin renders CriticRating on a 0–100 scale (jellyfin-androidtv divides by 100,
-    /// jellyfin-web flips its fresh/rotten icon at 60), so the 0–10 score is scaled up.
-    /// </summary>
-    private const double Scale = 10d;
-
     private readonly RequestDelegate _next;
-    private readonly ILogger<CriticRatingOverrideMiddleware> _logger;
+    private readonly ILogger<RatingOverrideMiddleware> _logger;
 
-    public CriticRatingOverrideMiddleware(RequestDelegate next, ILogger<CriticRatingOverrideMiddleware> logger)
+    public RatingOverrideMiddleware(RequestDelegate next, ILogger<RatingOverrideMiddleware> logger)
     {
         _next = next;
         _logger = logger;
@@ -45,7 +40,8 @@ public class CriticRatingOverrideMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (Plugin.Instance?.Configuration.OverrideCriticRating != true
+        var targets = ActiveTargets();
+        if (targets.Count == 0
             || !HttpMethods.IsGet(context.Request.Method)
             || !IsItemResponse(context.Request.Path))
         {
@@ -53,9 +49,10 @@ public class CriticRatingOverrideMiddleware
             return;
         }
 
-        // Read the client's paging intent before the query is rewritten.
-        var sorting = context.Request.Query["SortBy"].ToString()
-            .StartsWith("CriticRating", StringComparison.OrdinalIgnoreCase);
+        // Read the client's paging intent before the query is rewritten. Only a sort by a
+        // field actually being borrowed is intercepted; the other one keeps its real order.
+        var sortBy = context.Request.Query["SortBy"].ToString();
+        var sorting = targets.Any(t => sortBy.StartsWith(t.Field, StringComparison.OrdinalIgnoreCase));
         var start = sorting ? ReadInt(context.Request.Query["StartIndex"], 0) : 0;
         var limit = sorting ? ReadInt(context.Request.Query["Limit"], int.MaxValue) : int.MaxValue;
         var descending = sorting && string.Equals(
@@ -99,7 +96,7 @@ public class CriticRatingOverrideMiddleware
                 Resort(root, start, limit, descending, context.Request.Path);
             }
 
-            ApplyPersonalRating(root);
+            ApplyPersonalRating(root, targets);
 
             var bytes = Encoding.UTF8.GetBytes(root.ToJsonString());
             context.Response.Headers.Remove("Content-Encoding");
@@ -227,12 +224,35 @@ public class CriticRatingOverrideMiddleware
     }
 
     /// <summary>
-    /// Replaces CriticRating with the personal rating on every item in the payload, at any
-    /// depth — list responses, single items and the nested items other endpoints embed.
-    /// Items without a personal rating report no critic rating at all: leaving the real one
-    /// in place would read as a personal score that was never given.
+    /// The fields that can stand in for the personal rating, with the scale each one is
+    /// rendered on: CriticRating is 0–100 (jellyfin-androidtv divides by 100, jellyfin-web
+    /// flips its fresh/rotten icon at 60), CommunityRating is already 0–10.
     /// </summary>
-    private static void ApplyPersonalRating(JsonNode? node)
+    private static IReadOnlyList<(string Field, double Scale)> ActiveTargets()
+    {
+        var config = Plugin.Instance?.Configuration;
+        var targets = new List<(string, double)>(2);
+
+        if (config?.OverrideCriticRating == true)
+        {
+            targets.Add(("CriticRating", 10d));
+        }
+
+        if (config?.OverrideCommunityRating == true)
+        {
+            targets.Add(("CommunityRating", 1d));
+        }
+
+        return targets;
+    }
+
+    /// <summary>
+    /// Replaces the borrowed fields with the personal rating on every item in the payload, at
+    /// any depth — list responses, single items and the nested items other endpoints embed.
+    /// Items without a personal rating report no value at all: leaving the real one in place
+    /// would read as a personal score that was never given.
+    /// </summary>
+    private static void ApplyPersonalRating(JsonNode? node, IReadOnlyList<(string Field, double Scale)> targets)
     {
         switch (node)
         {
@@ -240,12 +260,15 @@ public class CriticRatingOverrideMiddleware
                 if (obj.ContainsKey("UserData"))
                 {
                     var rating = RatingOf(obj);
-                    obj["CriticRating"] = rating is null ? null : JsonValue.Create(rating.Value * Scale);
+                    foreach (var (field, scale) in targets)
+                    {
+                        obj[field] = rating is null ? null : JsonValue.Create(rating.Value * scale);
+                    }
                 }
 
                 foreach (var pair in obj.ToList())
                 {
-                    ApplyPersonalRating(pair.Value);
+                    ApplyPersonalRating(pair.Value, targets);
                 }
 
                 break;
@@ -253,7 +276,7 @@ public class CriticRatingOverrideMiddleware
             case JsonArray array:
                 foreach (var child in array.ToList())
                 {
-                    ApplyPersonalRating(child);
+                    ApplyPersonalRating(child, targets);
                 }
 
                 break;

@@ -15,7 +15,7 @@ Uses the existing per-user field `UserData.Rating` — the same value Jellyfin a
 - **Sort** by personal rating (menu entry *Personal rating* / *Eigene Bewertung*). Jellyfin 10.11 ignores `SortBy=UserRating` on the server, so the plugin loads the library and sorts in the browser.
 - **Poster badge:** personal score on the cover. Hover by default; a star button in the library toolbar keeps badges visible. Sorting by personal rating turns that on automatically (toggle still wins). Preference is stored in the browser (`localStorage`).
 - **Detail page:** score next to the community stars. Click it for a 10→1 picker.
-- **Native clients (optional, off by default):** report the personal rating as `CriticRating` so Android, FireTV, webOS and Chromecast can show and sort by it. Responses only, nothing written to the database — see [Native clients](#native-clients).
+- **Native clients (optional, off by default):** report the personal rating as `CriticRating` and/or `CommunityRating` so Android, FireTV, webOS and Chromecast can show and sort by it. Two separate switches, responses only, nothing written to the database — see [Native clients](#native-clients).
 - **IMDb import:** Dashboard → Plugins → User Rating. Upload an IMDb *Your Ratings* CSV (`Const` + `Your Rating`). Dry-run first. Match is `ProviderIds.Imdb`. Only `UserData.Rating` is written; play state is left alone. Titles not in the library are listed with clickable IMDb ids, paginated (default 200 per page, size is selectable), highest score first. **Download CSV** exports the full sorted unmatched list (`Const`, `Title`, `Year`, `Title Type`, `Your Rating`). The title column is whatever IMDb put in the export (often localized).
 
 ## Requirements
@@ -69,17 +69,24 @@ Zip that DLL as `Jellyfin.Plugin.UserRating_1.1.0.5.zip` for Dashboard install-f
 
 ## Native clients
 
-Android, Android TV, FireTV, webOS, Chromecast and the rest render their own UI. None of them shows `UserData.Rating`, and `ItemSortBy` in 10.11 has no `UserRating` member, so there is nothing for them to ask the server for. The one field they all *do* render — and offer in their sort menu — is `CriticRating`.
+Android, Android TV, FireTV, webOS, Chromecast and the rest render their own UI. None of them shows `UserData.Rating`, and `ItemSortBy` in 10.11 has no `UserRating` member, so there is nothing for them to ask the server for. What they *do* render — and offer in their sort menus — is `CriticRating` and `CommunityRating`.
 
-Dashboard → Plugins → User Rating → **Report the personal rating as critic rating** borrows that slot. With it on, item responses carry your own score in `CriticRating` (scaled ×10, because Jellyfin treats the field as 0–100), and `SortBy=CriticRating` gets re-sorted by personal rating before the page goes out.
+Dashboard → Plugins → User Rating borrows one or both of those slots. Two independent switches, both off by default:
+
+| Switch | Field | Scale | Visibility |
+|---|---|---|---|
+| **Use the critic rating field** | `CriticRating` | ×10 — a 9 shows as 90 | Discreet. Rarely populated, and many clients show it on the detail page only |
+| **Use the community rating field** | `CommunityRating` | ×1 — shows unchanged | Prominent. The stars appear on detail pages *and* on cover art |
+
+With a switch on, item responses carry your own score in that field, and `SortBy=<that field>` gets re-sorted by personal rating before the page goes out. Turn on both and every rating a client shows you is your own.
 
 A hack, deliberately, and reversible by design:
 
-- **Nothing is written to the database.** Responses are rewritten on the way out. The stored critic ratings stay intact and reappear on the next request once the toggle is off — no re-import, no metadata refresh.
-- Items you have not rated report *no* critic rating rather than the real one. Otherwise a stray 87 reads like a score you gave.
-- While it is on, the web UI shows that same number with a tomato icon — fresh from `Rating ≥ 6`, rotten below (jellyfin-web switches at 60).
+- **Nothing is written to the database.** Responses are rewritten on the way out. The stored ratings stay intact and reappear on the next request once a switch is off — no re-import, no metadata refresh.
+- Items you have not rated report *no* value rather than the real one. Otherwise a stray 87 reads like a score you gave.
+- The web UI is not exempt: with the critic switch on it shows your score with a tomato icon, fresh from `Rating ≥ 6` and rotten below (jellyfin-web switches at 60); with the community switch on it replaces the stars.
 - Sorting pulls the unpaged result to reorder it, capped at 20,000 items per query. Past that the server logs a warning and the tail is dropped.
-- Genuine critic ratings are gone for every client while the toggle is on. That is the trade.
+- The genuine ratings are out of sight for every client while a switch is on. That is the trade, and it is the whole reason each field has its own switch.
 
 ## Limitations
 

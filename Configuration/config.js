@@ -63,9 +63,16 @@ export default function (view) {
         setText('#urImport', t('import'));
         setText('#urNativeHeading', t('nativeHeading'));
         setText('#urCriticLabel', t('criticLabel'));
-        var criticDesc = view.querySelector('#urCriticDesc');
-        if (criticDesc) {
-            criticDesc.innerHTML = t('criticDesc');
+        setText('#urCommunityLabel', t('communityLabel'));
+        setHtml('#urNativeIntro', t('nativeIntro'));
+        setHtml('#urCriticDesc', t('criticDesc'));
+        setHtml('#urCommunityDesc', t('communityDesc'));
+    }
+
+    function setHtml(sel, html) {
+        var el = view.querySelector(sel);
+        if (el) {
+            el.innerHTML = html;
         }
     }
 
@@ -81,16 +88,23 @@ export default function (view) {
             return;
         }
         ApiClient.getPluginConfiguration(PLUGIN_ID).then(function (config) {
-            var box = view.querySelector('#urCritic');
-            if (box) {
-                box.checked = !!config.OverrideCriticRating;
-            }
+            setChecked('#urCritic', config.OverrideCriticRating);
+            setChecked('#urCommunity', config.OverrideCommunityRating);
         });
     }
 
-    function saveCriticOverride(enabled) {
+    function setChecked(sel, value) {
+        var box = view.querySelector(sel);
+        if (box) {
+            box.checked = !!value;
+        }
+    }
+
+    // Re-read before writing: the two toggles are independent, and a stale copy of the
+    // config would silently reset whichever one the user is not touching right now.
+    function saveOverride(key, enabled) {
         ApiClient.getPluginConfiguration(PLUGIN_ID).then(function (config) {
-            config.OverrideCriticRating = enabled;
+            config[key] = enabled;
             ApiClient.updatePluginConfiguration(PLUGIN_ID, config).then(function (result) {
                 if (window.Dashboard && Dashboard.processPluginConfigurationUpdateResult) {
                     Dashboard.processPluginConfigurationUpdateResult(result);
@@ -468,7 +482,10 @@ export default function (view) {
     });
 
     view.querySelector('#urCritic').addEventListener('change', function (ev) {
-        saveCriticOverride(ev.target.checked);
+        saveOverride('OverrideCriticRating', ev.target.checked);
+    });
+    view.querySelector('#urCommunity').addEventListener('change', function (ev) {
+        saveOverride('OverrideCommunityRating', ev.target.checked);
     });
 
     view.querySelector('#urDryRun').addEventListener('click', function () {

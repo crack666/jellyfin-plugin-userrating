@@ -14,7 +14,7 @@ public class ScriptInjectionStartupFilter : IStartupFilter
         return app =>
         {
             app.UseMiddleware<ScriptInjectionMiddleware>();
-            app.UseMiddleware<CriticRatingOverrideMiddleware>();
+            app.UseMiddleware<RatingOverrideMiddleware>();
             next(app);
         };
     }
