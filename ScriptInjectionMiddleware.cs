@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 
@@ -45,7 +44,7 @@ public class ScriptInjectionMiddleware
             }
 
             var encoding = context.Response.Headers.ContentEncoding.ToString();
-            var html = await TryReadHtmlAsync(buffer, encoding).ConfigureAwait(false);
+            var html = await ResponseBody.ReadTextAsync(buffer, encoding).ConfigureAwait(false);
             if (html is null
                 || !html.Contains("</body>", StringComparison.OrdinalIgnoreCase))
             {
@@ -71,48 +70,6 @@ public class ScriptInjectionMiddleware
         finally
         {
             context.Response.Body = originalBody;
-        }
-    }
-
-    private static async Task<string?> TryReadHtmlAsync(MemoryStream buffer, string encoding)
-    {
-        buffer.Seek(0, SeekOrigin.Begin);
-        Stream src = buffer;
-        Stream? decompressor = null;
-        try
-        {
-            if (encoding.Contains("br", StringComparison.OrdinalIgnoreCase))
-            {
-                decompressor = new BrotliStream(buffer, CompressionMode.Decompress, leaveOpen: true);
-            }
-            else if (encoding.Contains("gzip", StringComparison.OrdinalIgnoreCase))
-            {
-                decompressor = new GZipStream(buffer, CompressionMode.Decompress, leaveOpen: true);
-            }
-            else if (encoding.Contains("deflate", StringComparison.OrdinalIgnoreCase))
-            {
-                decompressor = new DeflateStream(buffer, CompressionMode.Decompress, leaveOpen: true);
-            }
-
-            src = decompressor ?? buffer;
-            using var reader = new StreamReader(
-                src,
-                Encoding.UTF8,
-                detectEncodingFromByteOrderMarks: true,
-                bufferSize: 1024,
-                leaveOpen: true);
-            return await reader.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch
-        {
-            return null;
-        }
-        finally
-        {
-            if (decompressor is not null)
-            {
-                await decompressor.DisposeAsync().ConfigureAwait(false);
-            }
         }
     }
 
