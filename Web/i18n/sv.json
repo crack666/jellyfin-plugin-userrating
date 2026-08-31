@@ -37,5 +37,6 @@
   "pageNext": "Nästa",
   "pageStatus": "Visar {from}–{to} av {total}",
   "pageSize": "Visa",
-  "pageAll": "Alla"
+  "pageAll": "Alla",
+  "exportCsv": "Ladda ned CSV"
 }

@@ -37,5 +37,6 @@
   "pageNext": "下一頁",
   "pageStatus": "顯示 {from}–{to} / 共 {total}",
   "pageSize": "顯示",
-  "pageAll": "全部"
+  "pageAll": "全部",
+  "exportCsv": "下載 CSV"
 }

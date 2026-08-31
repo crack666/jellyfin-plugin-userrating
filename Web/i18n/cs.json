@@ -37,5 +37,6 @@
   "pageNext": "Další",
   "pageStatus": "Zobrazeno {from}–{to} z {total}",
   "pageSize": "Zobrazit",
-  "pageAll": "Vše"
+  "pageAll": "Vše",
+  "exportCsv": "Stáhnout CSV"
 }

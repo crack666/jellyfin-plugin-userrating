@@ -37,5 +37,6 @@
   "pageNext": "Sonraki",
   "pageStatus": "{total} içinden {from}–{to} gösteriliyor",
   "pageSize": "Göster",
-  "pageAll": "Tümü"
+  "pageAll": "Tümü",
+  "exportCsv": "CSV indir"
 }

@@ -37,5 +37,6 @@
   "pageNext": "次へ",
   "pageStatus": "{total} 件中 {from}–{to} を表示",
   "pageSize": "表示",
-  "pageAll": "すべて"
+  "pageAll": "すべて",
+  "exportCsv": "CSV をダウンロード"
 }

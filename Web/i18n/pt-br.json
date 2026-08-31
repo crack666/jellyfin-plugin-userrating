@@ -37,5 +37,6 @@
   "pageNext": "Próximo",
   "pageStatus": "Mostrando {from}–{to} de {total}",
   "pageSize": "Mostrar",
-  "pageAll": "Tudo"
+  "pageAll": "Tudo",
+  "exportCsv": "Baixar CSV"
 }

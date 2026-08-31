@@ -37,5 +37,6 @@
   "pageNext": "Seuraava",
   "pageStatus": "Näytetään {from}–{to} / {total}",
   "pageSize": "Näytä",
-  "pageAll": "Kaikki"
+  "pageAll": "Kaikki",
+  "exportCsv": "Lataa CSV"
 }

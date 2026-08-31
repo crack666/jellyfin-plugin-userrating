@@ -175,6 +175,46 @@ export default function (view) {
         return html;
     }
 
+    function csvCell(value) {
+        var s = String(value == null ? '' : value);
+        if (/[",\n\r]/.test(s)) {
+            return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+    }
+
+    function downloadUnmatchedCsv() {
+        var rows = sortedRows();
+        if (!rows.length) {
+            return;
+        }
+        var lines = ['Const,Title,Year,Title Type,Your Rating'];
+        rows.forEach(function (row) {
+            lines.push([
+                csvCell(row.imdbId || row.ImdbId),
+                csvCell(row.title || row.Title),
+                csvCell(row.year || row.Year),
+                csvCell(row.titleType || row.TitleType),
+                csvCell(row.rating ?? row.Rating)
+            ].join(','));
+        });
+        var blob = new Blob(['\uFEFF' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        var now = new Date();
+        var stamp = now.getFullYear()
+            + '-' + String(now.getMonth() + 1).padStart(2, '0')
+            + '-' + String(now.getDate()).padStart(2, '0');
+        a.href = url;
+        a.download = 'jellyfin-unmatched-' + stamp + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () {
+            URL.revokeObjectURL(url);
+        }, 1000);
+    }
+
     function rowVal(row, key) {
         if (key === 'imdb') {
             return String(row.imdbId || row.ImdbId || '').toLowerCase();
@@ -260,6 +300,9 @@ export default function (view) {
         var to = start + slice.length;
         var pager = pagerHtml(from, to, total, pages);
         var html = '<p class="fieldDescription">' + t('unmatchedHint') + '</p>';
+        html += '<div class="ur-export-row" style="margin:8px 0 12px;">'
+            + '<button type="button" class="raised emby-button" data-ur-export>'
+            + esc(t('exportCsv')) + '</button></div>';
         html += pager;
         html += '<table class="detailTable" style="width:100%;">';
         html += '<thead><tr>'
@@ -361,6 +404,12 @@ export default function (view) {
             }
             unmatchedPage = 0;
             renderUnmatchedTable();
+            return;
+        }
+        var exportBtn = ev.target.closest && ev.target.closest('[data-ur-export]');
+        if (exportBtn) {
+            ev.preventDefault();
+            downloadUnmatchedCsv();
             return;
         }
         var btn = ev.target.closest && ev.target.closest('[data-ur-page]');

@@ -37,5 +37,6 @@
   "pageNext": "Επόμενο",
   "pageStatus": "Εμφάνιση {from}–{to} από {total}",
   "pageSize": "Εμφάνιση",
-  "pageAll": "Όλα"
+  "pageAll": "Όλα",
+  "exportCsv": "Λήψη CSV"
 }

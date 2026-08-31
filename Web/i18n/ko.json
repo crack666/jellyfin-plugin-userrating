@@ -37,5 +37,6 @@
   "pageNext": "다음",
   "pageStatus": "{total}개 중 {from}–{to} 표시",
   "pageSize": "표시",
-  "pageAll": "모두"
+  "pageAll": "모두",
+  "exportCsv": "CSV 다운로드"
 }

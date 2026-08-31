@@ -37,5 +37,6 @@
   "pageNext": "Următor",
   "pageStatus": "Se afișează {from}–{to} din {total}",
   "pageSize": "Afișează",
-  "pageAll": "Toate"
+  "pageAll": "Toate",
+  "exportCsv": "Descarcă CSV"
 }

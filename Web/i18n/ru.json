@@ -37,5 +37,6 @@
   "pageNext": "Далее",
   "pageStatus": "Показаны {from}–{to} из {total}",
   "pageSize": "Показать",
-  "pageAll": "Все"
+  "pageAll": "Все",
+  "exportCsv": "Скачать CSV"
 }

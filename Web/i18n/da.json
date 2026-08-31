@@ -37,5 +37,6 @@
   "pageNext": "Næste",
   "pageStatus": "Viser {from}–{to} af {total}",
   "pageSize": "Vis",
-  "pageAll": "Alle"
+  "pageAll": "Alle",
+  "exportCsv": "Download CSV"
 }

@@ -37,5 +37,6 @@
   "pageNext": "Neste",
   "pageStatus": "Viser {from}–{to} av {total}",
   "pageSize": "Vis",
-  "pageAll": "Alle"
+  "pageAll": "Alle",
+  "exportCsv": "Last ned CSV"
 }

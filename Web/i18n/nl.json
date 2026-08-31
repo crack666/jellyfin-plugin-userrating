@@ -37,5 +37,6 @@
   "pageNext": "Volgende",
   "pageStatus": "Weergave {from}–{to} van {total}",
   "pageSize": "Tonen",
-  "pageAll": "Alles"
+  "pageAll": "Alles",
+  "exportCsv": "CSV downloaden"
 }

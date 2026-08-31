@@ -37,5 +37,6 @@
   "pageNext": "Berikutnya",
   "pageStatus": "Menampilkan {from}–{to} dari {total}",
   "pageSize": "Tampilkan",
-  "pageAll": "Semua"
+  "pageAll": "Semua",
+  "exportCsv": "Unduh CSV"
 }

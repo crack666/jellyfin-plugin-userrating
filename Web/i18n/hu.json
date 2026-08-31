@@ -37,5 +37,6 @@
   "pageNext": "Következő",
   "pageStatus": "Megjelenítve: {from}–{to} / {total}",
   "pageSize": "Mutat",
-  "pageAll": "Mind"
+  "pageAll": "Mind",
+  "exportCsv": "CSV letöltése"
 }
