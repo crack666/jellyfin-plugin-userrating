@@ -15,7 +15,7 @@ Uses the existing per-user field `UserData.Rating` — the same value Jellyfin a
 - **Sort** by personal rating (menu entry *Personal rating* / *Eigene Bewertung*). Jellyfin 10.11 ignores `SortBy=UserRating` on the server, so the plugin loads the library and sorts in the browser.
 - **Poster badge:** personal score on the cover. Hover by default; a star button in the library toolbar keeps badges visible. Sorting by personal rating turns that on automatically (toggle still wins). Preference is stored in the browser (`localStorage`).
 - **Detail page:** score next to the community stars. Click it for a 10→1 picker.
-- **IMDb import:** Dashboard → Plugins → User Rating. Upload an IMDb *Your Ratings* CSV (`Const` + `Your Rating`). Dry-run first. Match is `ProviderIds.Imdb`. Only `UserData.Rating` is written; play state is left alone. Titles not in the library are listed with clickable IMDb ids, paginated (default 200 per page, size is selectable), highest score first. The title column is whatever IMDb put in the export (often localized).
+- **IMDb import:** Dashboard → Plugins → User Rating. Upload an IMDb *Your Ratings* CSV (`Const` + `Your Rating`). Dry-run first. Match is `ProviderIds.Imdb`. Only `UserData.Rating` is written; play state is left alone. Titles not in the library are listed with clickable IMDb ids, paginated (default 200 per page, size is selectable), highest score first. **Download CSV** exports the full sorted unmatched list (`Const`, `Title`, `Year`, `Title Type`, `Your Rating`). The title column is whatever IMDb put in the export (often localized).
 
 ## Requirements
 
@@ -35,7 +35,7 @@ Sideloaded plugins show a catalog warning; that is expected until this lives in 
 
 Plugins live in the container at `/config/plugins/` (host dataset, UID 568). Example:
 
-`/mnt/…/apps/jellyfin/config/plugins/User Rating_1.1.0.4/Jellyfin.Plugin.UserRating.dll`
+`/mnt/…/apps/jellyfin/config/plugins/User Rating_1.1.0.5/Jellyfin.Plugin.UserRating.dll`
 
 Restart the app after copying. Do not rewrite compressed `/web` HTML by hand — the plugin decompresses gzip/br before injecting its script.
 
@@ -64,7 +64,7 @@ dotnet build -c Release
 
 Output: `bin/Release/net9.0/Jellyfin.Plugin.UserRating.dll`
 
-Zip that DLL as `Jellyfin.Plugin.UserRating_1.1.0.4.zip` for Dashboard install-from-file.
+Zip that DLL as `Jellyfin.Plugin.UserRating_1.1.0.5.zip` for Dashboard install-from-file.
 
 ## Limitations
 
