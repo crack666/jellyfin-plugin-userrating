@@ -71,6 +71,25 @@ Zip that DLL as `Jellyfin.Plugin.UserRating_1.1.0.5.zip` for Dashboard install-f
 - Sort is client-side (server 10.11 does not honor `UserRating`).
 - UI follows Jellyfin’s display language (`html lang`): English default, plus locale files in `Web/i18n/` (de, fr, es, it, nl, pt, pt-br, pl, ru, and others). Missing keys fall back to English.
 - Not in the official Jellyfin plugin catalog yet (manual install).
+- Only the Jellyfin **web UI** is touched (and clients embedding it, e.g. Jellyfin Media Player). Native apps — Android, Android TV, FireTV, LG webOS, Chromecast, third-party clients — render their own UI and cannot show or sort by the personal rating. `ItemSortBy` in 10.11 has no `UserRating` member, so there is nothing for them to ask the server for.
+
+## Compatibility
+
+**KefinTweaks Watchlist** ([ranaldsgift/KefinTweaks](https://github.com/ranaldsgift/KefinTweaks)) collides with this plugin. Not a bug in either project — both write the same server field.
+
+Jellyfin has no separate storage for `Likes`. `UserItemData.Likes` is a computed view over `UserData.Rating`:
+
+- read: `Likes == (Rating >= 6.5)` (`UserItemData.MinLikeValue`)
+- write: `Likes = true` sets `Rating = 10`, `Likes = false` sets `Rating = 1`
+- `Filters=Likes` translates to SQL `Rating >= 6.5`
+
+KefinTweaks keeps watchlist membership in `Likes`, so *being on the watchlist* is literally *rating ≥ 6.5*. With both installed:
+
+- Rating an item 7–10 silently puts it on the watchlist; rating it 1–6 silently takes it off.
+- Adding to / removing from the watchlist overwrites an existing personal rating with 10 / 1.
+- Worst case: rating an **already played** item ≥ 7 falls back to 1 within a second. The rating write emits a `UserDataChanged` websocket event, and KefinTweaks listens on it to auto-remove played items from the watchlist.
+
+This plugin has no way around it. It writes the field Jellyfin documents as *"users 0-10 rating"*, through the official endpoint, with a partial update that touches nothing else. Decoupling has to happen elsewhere: KefinTweaks moving the watchlist off `Likes`, or upstream promoting `UserData.Likes` — the database column already exists — to independent storage.
 
 ## Contributing
 
