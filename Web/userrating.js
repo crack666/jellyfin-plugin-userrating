@@ -687,7 +687,10 @@
             return Promise.reject(new Error('no ApiClient'));
         }
         var userId = window.ApiClient.getCurrentUserId();
-        var url = window.ApiClient.getUrl('Users/' + userId + '/Items/' + itemId + '/UserData');
+        // Current 10.11 route. Users/{userId}/Items/{itemId}/UserData still works but is
+        // marked [Obsolete] server-side. Only Rating is sent: the endpoint is a partial
+        // update, every other UserData field stays untouched.
+        var url = window.ApiClient.getUrl('UserItems/' + itemId + '/UserData', { userId: userId });
         return window.ApiClient.ajax({
             type: 'POST',
             url: url,
