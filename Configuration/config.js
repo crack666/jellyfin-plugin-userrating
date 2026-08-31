@@ -1,5 +1,6 @@
 export default function (view) {
     var PAGE_SIZE_KEY = 'jf-userrating-unmatched-pagesize';
+    var PLUGIN_ID = '7e3c9a12-4b8f-4d71-9e2a-1c5f8b0d4a33';
     var unmatchedRows = [];
     var unmatchedPage = 0;
     var sortKey = 'rating';
@@ -60,6 +61,12 @@ export default function (view) {
         setText('#urSeriesLabel', t('series'));
         setText('#urDryRun', t('dryRun'));
         setText('#urImport', t('import'));
+        setText('#urNativeHeading', t('nativeHeading'));
+        setText('#urCriticLabel', t('criticLabel'));
+        var criticDesc = view.querySelector('#urCriticDesc');
+        if (criticDesc) {
+            criticDesc.innerHTML = t('criticDesc');
+        }
     }
 
     function setText(sel, text) {
@@ -67,6 +74,29 @@ export default function (view) {
         if (el) {
             el.textContent = text;
         }
+    }
+
+    function loadConfig() {
+        if (!window.ApiClient || !ApiClient.getPluginConfiguration) {
+            return;
+        }
+        ApiClient.getPluginConfiguration(PLUGIN_ID).then(function (config) {
+            var box = view.querySelector('#urCritic');
+            if (box) {
+                box.checked = !!config.OverrideCriticRating;
+            }
+        });
+    }
+
+    function saveCriticOverride(enabled) {
+        ApiClient.getPluginConfiguration(PLUGIN_ID).then(function (config) {
+            config.OverrideCriticRating = enabled;
+            ApiClient.updatePluginConfiguration(PLUGIN_ID, config).then(function (result) {
+                if (window.Dashboard && Dashboard.processPluginConfigurationUpdateResult) {
+                    Dashboard.processPluginConfigurationUpdateResult(result);
+                }
+            });
+        });
     }
 
     function setStatus(text) {
@@ -437,6 +467,10 @@ export default function (view) {
         renderUnmatchedTable({ scroll: true });
     });
 
+    view.querySelector('#urCritic').addEventListener('change', function (ev) {
+        saveCriticOverride(ev.target.checked);
+    });
+
     view.querySelector('#urDryRun').addEventListener('click', function () {
         runImport(true);
     });
@@ -452,11 +486,13 @@ export default function (view) {
     ensureI18n().then(function () {
         applyStaticI18n();
         loadUsers();
+        loadConfig();
     });
     view.addEventListener('viewshow', function () {
         ensureI18n().then(function () {
             applyStaticI18n();
             loadUsers();
+            loadConfig();
             if (lastResult) {
                 renderResult(lastResult);
             }

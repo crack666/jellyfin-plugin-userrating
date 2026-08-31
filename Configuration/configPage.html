@@ -15,6 +15,23 @@
             </div>
 
             <div class="verticalSection">
+                <h2 class="sectionTitle" id="urNativeHeading">Native clients</h2>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="urCritic" />
+                        <span id="urCriticLabel">Report the personal rating as critic rating</span>
+                    </label>
+                    <div class="fieldDescription" id="urCriticDesc">
+                        Android, Android TV, FireTV, webOS and Chromecast know nothing about a personal rating.
+                        With this on, item responses carry it in <code>CriticRating</code> (scaled to 0–100) and
+                        sorting by critic rating sorts by it, so those clients can show and sort your scores.
+                        Responses only — the stored critic ratings are never written to and come back the moment
+                        you switch this off. The web UI shows the same value with a tomato icon while it is on.
+                    </div>
+                </div>
+            </div>
+
+            <div class="verticalSection">
                 <h2 class="sectionTitle" id="urImportHeading">IMDb import</h2>
                 <p class="fieldDescription" id="urImportDesc">
                     IMDb → Your Ratings → Export. Required columns: <strong>Const</strong> (tt…) and <strong>Your Rating</strong>.
