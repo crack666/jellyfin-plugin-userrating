@@ -1,0 +1,21 @@
+[
+  {
+    "guid": "7e3c9a12-4b8f-4d71-9e2a-1c5f8b0d4a33",
+    "name": "User Rating",
+    "description": "Imports an IMDb \"Your Ratings\" export into UserData.Rating and reports every rated title that is not in the library, sorted by your own score and exportable as CSV. Also surfaces the rating in the stock web UI: sort, poster badge, editable detail score. No jellyfin-web fork. https://github.com/crack666/jellyfin-plugin-userrating",
+    "overview": "Import your IMDb ratings, and see which rated titles are missing from your library",
+    "owner": "crack666",
+    "category": "General",
+    "imageUrl": "https://raw.githubusercontent.com/crack666/jellyfin-plugin-userrating/master/docs/logo.png",
+    "versions": [
+      {
+        "version": "1.2.0.0",
+        "changelog": "- Personal rating can stand in for CriticRating and/or CommunityRating, so native clients (Android, FireTV, webOS, Chromecast) show and sort by it.\n- Two independent toggles, response-only, nothing written to the database.\n- Rating writes moved to the current POST /UserItems/{itemId}/UserData route.\n- Settings text translated into all 29 bundled locales.\n",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/crack666/jellyfin-plugin-userrating/releases/download/v1.2.0.0/Jellyfin.Plugin.UserRating_1.2.0.0.zip",
+        "checksum": "a6f2c4444dd7cb2d90d33e703ce7944d",
+        "timestamp": "2026-08-31T23:20:07Z"
+      }
+    ]
+  }
+]

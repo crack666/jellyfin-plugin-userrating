@@ -35,12 +35,24 @@ Ratings live in the existing per-user field `UserData.Rating` — the same value
 
 ## Install
 
-1. Download the latest `Jellyfin.Plugin.UserRating_*.zip` from [Releases](https://github.com/crack666/jellyfin-plugin-userrating/releases), or build (below) and zip **only** `Jellyfin.Plugin.UserRating.dll`.
-2. Dashboard → Plugins → Catalog → gear → **Install from file** (or copy the DLL into a folder named `User Rating_<version>` under the server `plugins` directory).
-3. Restart Jellyfin.
-4. Hard-reload the web UI (**Ctrl+F5**).
+### From the plugin repository (recommended)
 
-Sideloaded plugins show a catalog warning; that is expected until this lives in the official plugin repo.
+Dashboard → Plugins → **Repositories** → **+**:
+
+| Field | Value |
+|---|---|
+| Repository Name | `crack666` |
+| Repository URL | `https://raw.githubusercontent.com/crack666/jellyfin-plugin-userrating/master/manifest.json` |
+
+**User Rating** then appears under Dashboard → Plugins → **Catalog**. Install it there, restart Jellyfin, and hard-reload the web UI (**Ctrl+F5**). Every future version arrives as an update notification.
+
+### Manually
+
+Download the latest `Jellyfin.Plugin.UserRating_*.zip` from [Releases](https://github.com/crack666/jellyfin-plugin-userrating/releases), then Dashboard → Plugins → Catalog → gear → **Install from file**. Or build it yourself (below) and copy the DLL into a folder named `User Rating_<version>` under the server's `plugins` directory. Restart, then **Ctrl+F5**.
+
+One caveat worth knowing: a plugin folder Jellyfin did not install itself **never updates automatically**. The server synthesises a manifest for such folders with `AutoUpdate = false`, so the update task skips them forever. Installing once from the repository fixes that permanently.
+
+**Switching from a manual install loses nothing.** Ratings live in Jellyfin's own database (`UserData.Rating`) and settings in `plugins/configurations/Jellyfin.Plugin.UserRating.xml` — both outside the versioned plugin folder that gets replaced.
 
 ### TrueNAS SCALE (ix-jellyfin)
 

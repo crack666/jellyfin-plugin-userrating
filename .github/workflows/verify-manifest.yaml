@@ -1,0 +1,41 @@
+name: Verify manifest
+
+# The whole point of a plugin repository is that one URL keeps working.
+# This proves weekly that the public URL resolves and that every zip it
+# advertises is still downloadable with the checksum the manifest claims.
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch the public manifest and check every version
+        env:
+          MANIFEST_URL: https://raw.githubusercontent.com/crack666/jellyfin-plugin-userrating/master/manifest.json
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, sys, urllib.request
+          url = os.environ['MANIFEST_URL']
+          print('manifest:', url)
+          with urllib.request.urlopen(url) as r:
+              packages = json.load(r)
+          bad = 0
+          for pkg in packages:
+              for v in pkg['versions']:
+                  try:
+                      with urllib.request.urlopen(v['sourceUrl']) as r:
+                          got = hashlib.md5(r.read()).hexdigest()
+                      ok = got.lower() == (v.get('checksum') or '').lower()
+                  except Exception as e:
+                      got, ok = repr(e), False
+                  print(('ok   ' if ok else 'FAIL '), pkg['name'], v['version'], v['sourceUrl'], got)
+                  bad += 0 if ok else 1
+          sys.exit(1 if bad else 0)
+          PY

@@ -1,0 +1,139 @@
+name: Release
+
+# Fires when a GitHub Release is published and is NOT a prerelease.
+# workflow_dispatch re-runs the whole thing against an existing tag.
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to (re)publish, e.g. v1.2.0.1'
+        required: true
+        type: string
+
+permissions:
+  contents: write          # needed to upload release assets and to push manifest.json
+
+concurrency:
+  group: plugin-manifest   # never let two releases edit manifest.json at once
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve the tag
+        run: echo "TAG=${{ github.event.release.tag_name || inputs.tag }}" >> "$GITHUB_ENV"
+
+      - name: Check out the tagged source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          path: src
+
+      # manifest.json lives on master, which is what the public raw URL serves.
+      - name: Check out master for the manifest
+        uses: actions/checkout@v7
+        with:
+          ref: master
+          path: manifest-checkout
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install jprm
+        run: python -m pip install jprm==1.1.0
+
+      # jprm takes the version from build.yaml, not from the tag, so a mismatch
+      # would silently publish the wrong number. Fail loudly instead.
+      - name: Tag must match build.yaml
+        working-directory: src
+        run: |
+          set -euo pipefail
+          version="$(python -c "import yaml,io;print(yaml.safe_load(io.open('build.yaml',encoding='utf-8'))['version'])")"
+          if [ "v${version}" != "${TAG}" ]; then
+            echo "::error::release tag ${TAG} does not match build.yaml version ${version}"
+            exit 1
+          fi
+          echo "PLUGIN_VERSION=${version}" >> "$GITHUB_ENV"
+
+      - name: Build the plugin zip
+        working-directory: src
+        run: |
+          set -euo pipefail
+          artifact="$(jprm --verbosity=debug plugin build . --output="${PWD}/artifacts")"
+          echo "ARTIFACT=${artifact}"            >> "$GITHUB_ENV"
+          echo "ASSET=$(basename "${artifact}")" >> "$GITHUB_ENV"
+
+      - name: Checksums and zip contents
+        run: |
+          set -euo pipefail
+          cd "$(dirname "$ARTIFACT")"
+          sha256sum "$ASSET" > "${ASSET}.sha256"
+          cat "${ASSET}.md5sum" "${ASSET}.sha256"
+          unzip -l "$ASSET"
+
+      - name: Attach the zip to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd "$(dirname "$ARTIFACT")"
+          gh release upload "$TAG" \
+            "$ASSET" "${ASSET}.md5sum" "${ASSET}.sha256" \
+            --repo "${{ github.repository }}" --clobber
+
+      # --plugin-url is what makes jprm point sourceUrl at the GitHub release asset
+      # instead of copying the zip next to manifest.json.
+      - name: Add this version to manifest.json
+        run: |
+          set -euo pipefail
+          url="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ASSET}"
+          [ -f manifest-checkout/manifest.json ] || jprm repo init manifest-checkout/manifest.json
+          jprm --verbosity=debug repo add --plugin-url="${url}" \
+            manifest-checkout/manifest.json "$ARTIFACT"
+          python -m json.tool manifest-checkout/manifest.json > /dev/null
+          echo "sourceUrl: ${url}"
+
+      - name: Commit and push manifest.json
+        working-directory: manifest-checkout
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain -- manifest.json)" ]; then
+            echo "manifest.json already up to date"
+            exit 0
+          fi
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add manifest.json
+          git commit -m "repo: publish ${PLUGIN_VERSION}"
+          git pull --rebase origin master
+          git push origin HEAD:master
+
+      # End-to-end proof: download what the manifest now advertises and re-check the md5
+      # exactly the way the Jellyfin server does before it unzips a plugin.
+      - name: Verify the published sourceUrl
+        run: |
+          set -euo pipefail
+          python - "$PWD/manifest-checkout/manifest.json" "$PLUGIN_VERSION" <<'PY'
+          import hashlib, json, sys, urllib.request
+          path, want = sys.argv[1], sys.argv[2]
+          for pkg in json.load(open(path, encoding='utf-8')):
+              for v in pkg['versions']:
+                  if v['version'] != want:
+                      continue
+                  with urllib.request.urlopen(v['sourceUrl']) as r:
+                      got = hashlib.md5(r.read()).hexdigest()
+                  print(v['sourceUrl'], got, v['checksum'])
+                  assert got.lower() == v['checksum'].lower(), 'checksum mismatch'
+                  sys.exit(0)
+          sys.exit('version %s not found in manifest' % want)
+          PY

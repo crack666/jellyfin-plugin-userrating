@@ -1,0 +1,56 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    paths-ignore: ['**/*.md', 'manifest.json', 'docs/**']
+  pull_request:
+    branches: [master]
+    paths-ignore: ['**/*.md', 'manifest.json', 'docs/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install jprm
+        run: python -m pip install jprm==1.1.0
+
+      # jprm reads build.yaml: it rewrites <AssemblyVersion>/<FileVersion>/<TargetFramework>
+      # in the csproj, runs dotnet clean/restore/publish, then zips ONLY the files listed
+      # under `artifacts:` plus a generated meta.json.
+      - name: Build the plugin zip
+        id: jprm
+        run: |
+          set -euo pipefail
+          artifact="$(jprm --verbosity=debug plugin build . --output="${PWD}/artifacts")"
+          echo "artifact=${artifact}" >> "$GITHUB_OUTPUT"
+
+      - name: Show what went into the zip
+        run: unzip -l "${{ steps.jprm.outputs.artifact }}"
+
+      - name: Upload the zip
+        uses: actions/upload-artifact@v7
+        with:
+          name: user-rating-plugin
+          path: |
+            artifacts/*.zip
+            artifacts/*.md5sum
+          if-no-files-found: error
+          retention-days: 30
