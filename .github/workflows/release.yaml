@@ -69,6 +69,7 @@ jobs:
         working-directory: src
         run: |
           set -euo pipefail
+          mkdir -p "${PWD}/artifacts"   # jprm does not create --output itself
           artifact="$(jprm --verbosity=debug plugin build . --output="${PWD}/artifacts")"
           echo "ARTIFACT=${artifact}"            >> "$GITHUB_ENV"
           echo "ASSET=$(basename "${artifact}")" >> "$GITHUB_ENV"

@@ -39,6 +39,7 @@ jobs:
         id: jprm
         run: |
           set -euo pipefail
+          mkdir -p "${PWD}/artifacts"   # jprm does not create --output itself
           artifact="$(jprm --verbosity=debug plugin build . --output="${PWD}/artifacts")"
           echo "artifact=${artifact}" >> "$GITHUB_OUTPUT"
 
