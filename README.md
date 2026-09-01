@@ -6,17 +6,27 @@ Community plugin for **Jellyfin 10.11**. No fork of `jellyfin/jellyfin-web`.
 
 **https://github.com/crack666/jellyfin-plugin-userrating**
 
-Uses the existing per-user field `UserData.Rating` — the same value Jellyfin already stores. Nothing extra in the database.
+## Bring your IMDb ratings in — and see what you rated but do not own
+
+Import your IMDb *Your Ratings* export and the plugin does two things.
+
+It writes your scores onto the matching titles in your library. And it lists **every title you rated on IMDb that is not in your library at all** — sorted by your own score, highest first, with clickable IMDb links, paginated, and exportable as CSV.
+
+That second list is the point of this plugin. It is a want-list assembled from your own taste rather than from a recommendation engine: the films you personally thought were worth an 8 or a 9, that you cannot actually watch on your own server. Nothing else in the Jellyfin ecosystem tells you that.
+
+Everything below is in service of it — your scores are visible and sortable inside Jellyfin so the imported data is worth something day to day.
 
 ![Library overview with personal rating badges on posters and the star toggle in the toolbar](docs/library-overview.png)
 
 ## Features
 
+- **IMDb import and gap report:** Dashboard → Plugins → User Rating. Upload an IMDb *Your Ratings* CSV (`Const` + `Your Rating`). Dry-run first. Match is `ProviderIds.Imdb`. Only `UserData.Rating` is written; play state is left alone. Titles not in the library are listed with clickable IMDb ids, paginated (default 200 per page, size is selectable), highest score first. **Download CSV** exports the full sorted unmatched list (`Const`, `Title`, `Year`, `Title Type`, `Your Rating`). The title column is whatever IMDb put in the export (often localized).
 - **Sort** by personal rating (menu entry *Personal rating* / *Eigene Bewertung*). Jellyfin 10.11 ignores `SortBy=UserRating` on the server, so the plugin loads the library and sorts in the browser.
 - **Poster badge:** personal score on the cover. Hover by default; a star button in the library toolbar keeps badges visible. Sorting by personal rating turns that on automatically (toggle still wins). Preference is stored in the browser (`localStorage`).
 - **Detail page:** score next to the community stars. Click it for a 10→1 picker.
 - **Native clients (optional, off by default):** report the personal rating as `CriticRating` and/or `CommunityRating` so Android, FireTV, webOS and Chromecast can show and sort by it. Two separate switches, responses only, nothing written to the database — see [Native clients](#native-clients).
-- **IMDb import:** Dashboard → Plugins → User Rating. Upload an IMDb *Your Ratings* CSV (`Const` + `Your Rating`). Dry-run first. Match is `ProviderIds.Imdb`. Only `UserData.Rating` is written; play state is left alone. Titles not in the library are listed with clickable IMDb ids, paginated (default 200 per page, size is selectable), highest score first. **Download CSV** exports the full sorted unmatched list (`Const`, `Title`, `Year`, `Title Type`, `Your Rating`). The title column is whatever IMDb put in the export (often localized).
+
+Ratings live in the existing per-user field `UserData.Rating` — the same value Jellyfin already stores. Nothing extra in the database.
 
 ## Requirements
 
@@ -87,6 +97,12 @@ A hack, deliberately, and reversible by design:
 - The web UI is not exempt: with the critic switch on it shows your score with a tomato icon, fresh from `Rating ≥ 6` and rotten below (jellyfin-web switches at 60); with the community switch on it replaces the stars.
 - Sorting pulls the unpaged result to reorder it, capped at 20,000 items per query. Past that the server logs a warning and the tail is dropped.
 - The genuine ratings are out of sight for every client while a switch is on. That is the trade, and it is the whole reason each field has its own switch.
+
+### This part is meant to become obsolete
+
+[jellyfin/jellyfin#17634](https://github.com/jellyfin/jellyfin/pull/17634) adds `ItemSortBy.UserRating`, a `minUserRating` filter and a numeric `rating` parameter to the server, with [jellyfin-web#8361](https://github.com/jellyfin/jellyfin-web/pull/8361) adding the UI. Once those land and clients pick them up, sorting and showing a personal rating stops being a workaround and becomes a server feature — and both switches above can go away.
+
+That is a good outcome, not a threat to this plugin. Borrowing a rating field is a hack; the IMDb import and the gap report are not, and no upstream PR replaces them.
 
 ## Limitations
 
