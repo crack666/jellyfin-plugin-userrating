@@ -48,7 +48,7 @@ Dashboard → Plugins → **Repositories** → **+**:
 
 ### Manually
 
-Download the latest `Jellyfin.Plugin.UserRating_*.zip` from [Releases](https://github.com/crack666/jellyfin-plugin-userrating/releases), then Dashboard → Plugins → Catalog → gear → **Install from file**. Or build it yourself (below) and copy the DLL into a folder named `User Rating_<version>` under the server's `plugins` directory. Restart, then **Ctrl+F5**.
+Download the latest `user-rating_*.zip` from [Releases](https://github.com/crack666/jellyfin-plugin-userrating/releases), then Dashboard → Plugins → Catalog → gear → **Install from file**. Or build it yourself (below) and copy the DLL into a folder named `User Rating_<version>` under the server's `plugins` directory. Restart, then **Ctrl+F5**.
 
 One caveat worth knowing: a plugin folder Jellyfin did not install itself **never updates automatically**. The server synthesises a manifest for such folders with `AutoUpdate = false`, so the update task skips them forever. Installing once from the repository fixes that permanently.
 
@@ -58,7 +58,7 @@ One caveat worth knowing: a plugin folder Jellyfin did not install itself **neve
 
 Plugins live in the container at `/config/plugins/` (host dataset, UID 568). Example:
 
-`/mnt/…/apps/jellyfin/config/plugins/User Rating_1.2.0.0/Jellyfin.Plugin.UserRating.dll`
+`/mnt/…/apps/jellyfin/config/plugins/User Rating_1.2.0.1/Jellyfin.Plugin.UserRating.dll`
 
 Restart the app after copying. Do not rewrite compressed `/web` HTML by hand — the plugin decompresses gzip/br before injecting its script.
 
@@ -87,7 +87,8 @@ dotnet build -c Release
 
 Output: `bin/Release/net9.0/Jellyfin.Plugin.UserRating.dll`
 
-Zip that DLL as `Jellyfin.Plugin.UserRating_1.2.0.0.zip` for Dashboard install-from-file.
+Zip that DLL for Dashboard install-from-file. Release zips are built by `jprm` and are named
+`user-rating_<version>.zip`; they contain the DLL plus a generated `meta.json`.
 
 ## Native clients
 

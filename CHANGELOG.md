@@ -4,6 +4,11 @@
 copied verbatim into the plugin repository manifest and manifest history is
 append-only. The full history lives here.
 
+## 1.2.0.1
+
+- No functional change; the DLL is identical in behaviour to 1.2.0.0.
+- First release published through the plugin repository, cut so the install and update path could be verified end to end rather than assumed.
+
 ## 1.2.0.0
 
 - Personal rating can stand in for `CriticRating` and/or `CommunityRating`, so native clients (Android, FireTV, webOS, Chromecast) show and sort by it.

@@ -1,6 +1,6 @@
 name: "User Rating"
 guid: "7e3c9a12-4b8f-4d71-9e2a-1c5f8b0d4a33"
-version: "1.2.0.0"
+version: "1.2.0.1"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 overview: "Import your IMDb ratings, and see which rated titles are missing from your library"
@@ -19,7 +19,5 @@ artifacts:
 # repository manifest, and manifest entries are append-only. History lives in
 # CHANGELOG.md.
 changelog: |
-  - Personal rating can stand in for CriticRating and/or CommunityRating, so native clients (Android, FireTV, webOS, Chromecast) show and sort by it.
-  - Two independent toggles, response-only, nothing written to the database.
-  - Rating writes moved to the current POST /UserItems/{itemId}/UserData route.
-  - Settings text translated into all 29 bundled locales.
+  - No functional change. First release published through the plugin repository, so the
+    install and update path can be verified end to end.
