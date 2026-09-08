@@ -58,7 +58,7 @@ public class ScriptInjectionMiddleware
                 var v = Plugin.Instance?.Version;
                 var tags =
                     $"<script src=\"/UserRating/i18n.js?v={v}\"></script>"
-                    + $"<script src=\"/UserRating/client.js?v={v}\" defer></script>";
+                    + $"<script src=\"/UserRating/client.js?v={v}\"></script>";
                 html = html.Replace("</body>", tags + "</body>", StringComparison.OrdinalIgnoreCase);
             }
 

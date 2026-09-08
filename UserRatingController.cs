@@ -126,7 +126,7 @@ public class UserRatingController : ControllerBase
     [Authorize]
     public ActionResult<IEnumerable<PluginUserDto>> ListUsers()
     {
-        var users = _userManager.Users
+        var users = _userManager.GetUsers()
             .OrderBy(u => u.Username, StringComparer.CurrentCultureIgnoreCase)
             .Select(u => new PluginUserDto { Id = u.Id, Name = u.Username })
             .ToList();

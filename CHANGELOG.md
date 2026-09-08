@@ -4,6 +4,14 @@
 copied verbatim into the plugin repository manifest and manifest history is
 append-only. The full history lives here.
 
+## 1.3.0.0
+
+- Jellyfin 12 port: `net10.0`, `targetAbi` 12.0.0.0, `IUserManager.GetUsers()`.
+- 10.11 remains on 1.2.0.1; a 12 build will not load there.
+- Web: Personal rating in the Jellyfin 12 Sort menu; pick up ratings if the first library fetch races the injected script.
+- Web: actually reorder the grid on JF12 (no `refreshItems`); load `client.js` before the first `/Items` fetch.
+- Web: Personal-rating sort keeps the native asc/desc arrow and toggles direction on a second click.
+
 ## 1.2.0.1
 
 - No functional change; the DLL is identical in behaviour to 1.2.0.0.

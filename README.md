@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-Community plugin for **Jellyfin 10.11**. No fork of `jellyfin/jellyfin-web`.
+Community plugin for **Jellyfin 12**. No fork of `jellyfin/jellyfin-web`.
 
 **https://github.com/crack666/jellyfin-plugin-userrating**
 
@@ -21,7 +21,7 @@ Everything below is in service of it — your scores are visible and sortable in
 ## Features
 
 - **IMDb import and gap report:** Dashboard → Plugins → User Rating. Upload an IMDb *Your Ratings* CSV (`Const` + `Your Rating`). Dry-run first. Match is `ProviderIds.Imdb`. Only `UserData.Rating` is written; play state is left alone. Titles not in the library are listed with clickable IMDb ids, paginated (default 200 per page, size is selectable), highest score first. **Download CSV** exports the full sorted unmatched list (`Const`, `Title`, `Year`, `Title Type`, `Your Rating`). The title column is whatever IMDb put in the export (often localized).
-- **Sort** by personal rating (menu entry *Personal rating* / *Eigene Bewertung*). Jellyfin 10.11 ignores `SortBy=UserRating` on the server, so the plugin loads the library and sorts in the browser.
+- **Sort** by personal rating (menu entry *Personal rating* / *Eigene Bewertung*). Jellyfin 12.0 still has no `ItemSortBy.UserRating`, so the plugin loads the library and sorts in the browser.
 - **Poster badge:** personal score on the cover. Hover by default; a star button in the library toolbar keeps badges visible. Sorting by personal rating turns that on automatically (toggle still wins). Preference is stored in the browser (`localStorage`).
 - **Detail page:** score next to the community stars. Click it for a 10→1 picker.
 - **Native clients (optional, off by default):** report the personal rating as `CriticRating` and/or `CommunityRating` so Android, FireTV, webOS and Chromecast can show and sort by it. Two separate switches, responses only, nothing written to the database — see [Native clients](#native-clients).
@@ -30,8 +30,8 @@ Ratings live in the existing per-user field `UserData.Rating` — the same value
 
 ## Requirements
 
-- Jellyfin **10.11** (built against ABI 10.11.0, tested on 10.11.11)
-- .NET 9 to build from source
+- Jellyfin **12.0** (built against ABI 12.0.0, `net10.0`). The 10.11 line stays on 1.2.0.1.
+- .NET 10 SDK to build from source
 
 ## Install
 
@@ -85,7 +85,7 @@ Always run **Check (dry-run)** before **Import**.
 dotnet build -c Release
 ```
 
-Output: `bin/Release/net9.0/Jellyfin.Plugin.UserRating.dll`
+Output: `bin/Release/net10.0/Jellyfin.Plugin.UserRating.dll`
 
 Zip that DLL for Dashboard install-from-file. Release zips are built by `jprm` and are named
 `user-rating_<version>.zip`; they contain the DLL plus a generated `meta.json`.
@@ -113,13 +113,13 @@ A hack, deliberately, and reversible by design:
 
 ### This part is meant to become obsolete
 
-[jellyfin/jellyfin#17634](https://github.com/jellyfin/jellyfin/pull/17634) adds `ItemSortBy.UserRating`, a `minUserRating` filter and a numeric `rating` parameter to the server, with [jellyfin-web#8361](https://github.com/jellyfin/jellyfin-web/pull/8361) adding the UI. Once those land and clients pick them up, sorting and showing a personal rating stops being a workaround and becomes a server feature — and both switches above can go away.
+[jellyfin/jellyfin#17634](https://github.com/jellyfin/jellyfin/pull/17634) adds `ItemSortBy.UserRating`, a `minUserRating` filter and a numeric `rating` parameter to the server, with [jellyfin-web#8361](https://github.com/jellyfin/jellyfin-web/pull/8361) adding the UI. That did not ship in 12.0; until it does (and clients pick it up), sorting and showing a personal rating stays a workaround — and both switches above remain.
 
 That is a good outcome, not a threat to this plugin. Borrowing a rating field is a hack; the IMDb import and the gap report are not, and no upstream PR replaces them.
 
 ## Limitations
 
-- Sort is client-side (server 10.11 does not honor `UserRating`).
+- Sort is client-side (Jellyfin 12.0 `ItemSortBy` still has no `UserRating`).
 - UI follows Jellyfin’s display language (`html lang`): English default, plus locale files in `Web/i18n/` (de, fr, es, it, nl, pt, pt-br, pl, ru, and others). Missing keys fall back to English.
 - Not in the official Jellyfin plugin catalog yet (manual install).
 - Out of the box only the Jellyfin **web UI** is touched (and clients embedding it, e.g. Jellyfin Media Player). Native apps need the [rating-field override](#native-clients), which is a workaround, not a feature Jellyfin supports.
@@ -148,7 +148,7 @@ Issues and pull requests are welcome. Fork the repo and open a PR against `maste
 
 ## Credit
 
-Built by [crack666](https://github.com/crack666) with **Cursor / Grok 4.6**, against stock Jellyfin 10.11.
+Built by [crack666](https://github.com/crack666) with **Cursor / Grok 4.6**. 1.3.x targets stock Jellyfin 12; the 10.11 line remains 1.2.0.1.
 
 ## License
 
