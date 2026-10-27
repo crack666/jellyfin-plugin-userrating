@@ -111,12 +111,11 @@
             || '';
     }
 
+    // Only an explicit SortBy=UserRating. The flag used to count too, which turned every
+    // list the page fetched — home rows included — into a 20,000-item pull, and reordered
+    // pages the server had already sorted.
     function wantsUserSort(u) {
-        var sortBy = qs(u, 'SortBy');
-        if (sortBy.split(',').indexOf(OPTION_VALUE) !== -1) {
-            return true;
-        }
-        return sessionStorage.getItem(FLAG) === '1';
+        return qs(u, 'SortBy').split(',').indexOf(OPTION_VALUE) !== -1;
     }
 
     function wantsDescending(u) {
@@ -297,6 +296,47 @@
             ratings[data.Id] = userRating(data);
         }
         scheduleDecorate();
+    }
+
+    // Jellyfin 12's library view talks to the server through the SDK, which is axios, which
+    // is XMLHttpRequest — the fetch hook never sees those responses. Read-only: the ratings
+    // it collects are what the cover badges and the detail picker display.
+    function installXhrHook() {
+        var proto = window.XMLHttpRequest && window.XMLHttpRequest.prototype;
+        if (!proto || proto.__urHooked) {
+            return;
+        }
+        proto.__urHooked = true;
+
+        var open = proto.open;
+        proto.open = function (method, url) {
+            try {
+                this.__urWatch = typeof url === 'string' && isItemsListUrl(url);
+            } catch (e) {
+                this.__urWatch = false;
+            }
+            return open.apply(this, arguments);
+        };
+
+        var send = proto.send;
+        proto.send = function () {
+            if (this.__urWatch) {
+                this.addEventListener('load', function () {
+                    try {
+                        if (this.status < 200 || this.status >= 300) {
+                            return;
+                        }
+                        var type = this.responseType;
+                        if (type === 'json') {
+                            harvestPayload(this.response);
+                        } else if (type === '' || type === 'text') {
+                            harvestPayload(JSON.parse(this.responseText));
+                        }
+                    } catch (e) { /* not json, or a binary response */ }
+                });
+            }
+            return send.apply(this, arguments);
+        };
     }
 
     function installAjaxHook() {
@@ -586,7 +626,6 @@
             injectSortOptions();
             injectBadgeToggles();
             applyBadgeMode();
-            sortVisibleCards();
         } finally {
             decorating = false;
         }
@@ -752,6 +791,11 @@
         }
     }
 
+    // The direction arrow inside a native sort item is React's own node. Emptying that icon
+    // — which this did until 1.3.0.1 — left React holding a child that was no longer in the
+    // DOM, and the next render of the menu took the whole app down with
+    // "removeChild: The node to be removed is not a child of this node". Hide it with CSS
+    // and leave the node to React.
     function stripNativeSortSelection(menu) {
         nativeSortItems(menu).forEach(function (item) {
             if (item.classList.contains('ur-sort-menuitem')) {
@@ -759,10 +803,13 @@
             }
             item.classList.remove('Mui-selected');
             item.setAttribute('aria-selected', 'false');
-            var icon = item.querySelector('.MuiListItemIcon-root');
-            if (icon) {
-                icon.innerHTML = '';
-            }
+            item.setAttribute('data-ur-arrow', 'hidden');
+        });
+    }
+
+    function restoreNativeSortSelection(menu) {
+        nativeSortItems(menu).forEach(function (item) {
+            item.removeAttribute('data-ur-arrow');
         });
     }
 
@@ -771,6 +818,7 @@
         if (!li) {
             return;
         }
+        syncUserSortFlag(menu);
         var on = isUserSortOn();
         li.classList.toggle('Mui-selected', on);
         li.setAttribute('aria-selected', on ? 'true' : 'false');
@@ -778,22 +826,132 @@
         if (on) {
             ensureSortArrow(li, menu, userSortDescending());
             stripNativeSortSelection(menu);
-        } else if (icon) {
-            icon.innerHTML = '';
+        } else {
+            restoreNativeSortSelection(menu);
+            if (icon) {
+                icon.innerHTML = '';
+            }
         }
+    }
+
+    // The library view keeps its sort in React state. Its menu items close over their own
+    // value, and rewriting the stored settings in localStorage does not make React re-read
+    // them, so the state setter the view passes down is the only handle the page offers.
+    function findViewSettings(el) {
+        var key = null;
+        for (var name in el) {
+            if (name.indexOf('__reactFiber$') === 0) {
+                key = name;
+                break;
+            }
+        }
+        if (!key) {
+            return null;
+        }
+        var fiber = el[key];
+        var depth = 0;
+        while (fiber && depth < 80) {
+            var props = fiber.memoizedProps;
+            if (props && typeof props === 'object' && typeof props.setLibraryViewSettings === 'function') {
+                return props;
+            }
+            fiber = fiber.return;
+            depth++;
+        }
+        return null;
+    }
+
+    // Same fiber walk for the popover's own close handler. Clicking the backdrop or sending
+    // Escape does not reach it, and the menu has to be closed before the sort is applied:
+    // while it is open it writes its own idea of the sort order back over ours.
+    function findMenuClose(el) {
+        var key = null;
+        for (var name in el) {
+            if (name.indexOf('__reactFiber$') === 0) {
+                key = name;
+                break;
+            }
+        }
+        if (!key) {
+            return null;
+        }
+        var fiber = el[key];
+        var depth = 0;
+        while (fiber && depth < 80) {
+            var props = fiber.memoizedProps;
+            if (props && typeof props === 'object' && props.open === true && typeof props.onClose === 'function') {
+                return props.onClose;
+            }
+            fiber = fiber.return;
+            depth++;
+        }
+        return null;
+    }
+
+    function settingsSortBy(view) {
+        var sort = view && view.libraryViewSettings && view.libraryViewSettings.SortBy;
+        if (!sort) {
+            return [];
+        }
+        return Array.isArray(sort) ? sort : String(sort).split(',');
+    }
+
+    function settingsDescending(view) {
+        var order = view && view.libraryViewSettings && view.libraryViewSettings.SortOrder;
+        return order ? order !== 'Ascending' : userSortDescending();
+    }
+
+    // The view settings are the truth about what the library is sorted by; the flag only
+    // mirrors them so the badge default and the menu paint agree with what is on screen.
+    function syncUserSortFlag(el) {
+        var view = findViewSettings(el);
+        if (!view) {
+            return;
+        }
+        if (settingsSortBy(view).indexOf(OPTION_VALUE) !== -1) {
+            setUserSortDir(settingsDescending(view));
+        } else if (isUserSortOn()) {
+            clearUserSort();
+        }
+        applyBadgeMode();
     }
 
     function applyUserSortClick(ev, menu) {
         ev.preventDefault();
         ev.stopPropagation();
-        if (isUserSortOn()) {
-            setUserSortDir(!userSortDescending());
-        } else {
-            setUserSortDir(true);
-        }
+        // The menu element, never the clicked item: our entry is a cloneNode of a native one
+        // and clones carry no __reactFiber$ property, so the walk would start nowhere.
+        var view = findViewSettings(menu);
+        var on = view ? settingsSortBy(view).indexOf(OPTION_VALUE) !== -1 : isUserSortOn();
+        var descending = on ? !(view ? settingsDescending(view) : userSortDescending()) : true;
+        setUserSortDir(descending);
         applyBadgeMode();
+
+        if (view) {
+            var close = findMenuClose(menu);
+            if (close) {
+                close();
+            }
+            // Ask for the sort the way a native entry does and let the view refetch itself.
+            // RatingOverrideMiddleware answers SortBy=UserRating with the sorted page, so
+            // nothing here has to touch the grid React just painted. One tick later, so the
+            // closing menu does not push its own sort order back on the way out.
+            setTimeout(function () {
+                view.setLibraryViewSettings(function (prev) {
+                    return Object.assign({}, prev, {
+                        StartIndex: 0,
+                        SortBy: [OPTION_VALUE],
+                        SortOrder: descending ? 'Descending' : 'Ascending'
+                    });
+                });
+            }, 0);
+            return;
+        }
+
+        // No view state to drive: repaint the entry and leave the grid alone. Reordering the
+        // cards by hand is how the sort used to look right while being wrong — the rating
+        // cache only holds what has been fetched, so it sorted a page, not the library.
         fullCache = { key: '', items: null, inflight: null };
-        sortVisibleCards();
         paintUserSortMenu(menu);
     }
 
@@ -1159,13 +1317,15 @@
             '.ur-sort-wrap{margin:8px;width:200px;}',
             '.ur-sort-option{width:100%;text-align:left;padding:10px 12px;border:1px solid rgba(255,255,255,.23);border-radius:4px;background:transparent;color:inherit;cursor:pointer;}',
             '.ur-sort-option[data-active="1"]{border-color:#3e8ef7;color:#7cb7ff;}',
-            '.ur-sort-menuitem .MuiListItemIcon-root,.ur-sort-arrow-slot{justify-content:flex-end;min-width:36px;}'
+            '.ur-sort-menuitem .MuiListItemIcon-root,.ur-sort-arrow-slot{justify-content:flex-end;min-width:36px;}',
+            '[data-ur-arrow="hidden"] .MuiListItemIcon-root{visibility:hidden;}'
         ].join('');
         document.head.appendChild(css);
     }
 
     injectCss();
     installFetchHook();
+    installXhrHook();
     applyBadgeMode();
 
     window.addEventListener('hashchange', function () {

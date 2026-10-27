@@ -29,6 +29,13 @@ public class RatingOverrideMiddleware
     /// </summary>
     private const int MaxScan = 20000;
 
+    /// <summary>
+    /// The plugin's own <c>SortBy</c> value. No <c>ItemSortBy</c> member matches it, so the
+    /// server parses it away and returns its default order — sorting it here is what makes a
+    /// personal-rating sort work at all, for every client and whatever the client fetches with.
+    /// </summary>
+    private const string PersonalSortValue = "UserRating";
+
     private readonly RequestDelegate _next;
     private readonly ILogger<RatingOverrideMiddleware> _logger;
 
@@ -41,7 +48,16 @@ public class RatingOverrideMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var targets = ActiveTargets();
-        if (targets.Count == 0
+
+        // Read the client's paging intent before the query is rewritten. A sort by the
+        // plugin's own value always applies; a sort by a borrowed field only while that
+        // field is switched on, so the other one keeps its real order.
+        var sortBy = context.Request.Query["SortBy"].ToString();
+        var personalSort = sortBy
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(value => value.Equals(PersonalSortValue, StringComparison.OrdinalIgnoreCase));
+
+        if ((targets.Count == 0 && !personalSort)
             || !HttpMethods.IsGet(context.Request.Method)
             || !IsItemResponse(context.Request.Path))
         {
@@ -49,10 +65,8 @@ public class RatingOverrideMiddleware
             return;
         }
 
-        // Read the client's paging intent before the query is rewritten. Only a sort by a
-        // field actually being borrowed is intercepted; the other one keeps its real order.
-        var sortBy = context.Request.Query["SortBy"].ToString();
-        var sorting = targets.Any(t => sortBy.StartsWith(t.Field, StringComparison.OrdinalIgnoreCase));
+        var sorting = personalSort
+            || targets.Any(t => sortBy.StartsWith(t.Field, StringComparison.OrdinalIgnoreCase));
         var start = sorting ? ReadInt(context.Request.Query["StartIndex"], 0) : 0;
         var limit = sorting ? ReadInt(context.Request.Query["Limit"], int.MaxValue) : int.MaxValue;
         var descending = sorting && string.Equals(

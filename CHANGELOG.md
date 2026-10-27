@@ -4,6 +4,30 @@
 copied verbatim into the plugin repository manifest and manifest history is
 append-only. The full history lives here.
 
+## 1.3.0.1
+
+Three defects that Jellyfin 12.3 brought to the surface, all reproduced and fixed against a
+live 12.3.0 server.
+
+- **The white "Unexpected Application Error" screen.** With the personal-rating sort on, the
+  plugin emptied the icon slot of every other entry in the sort menu to hide its direction
+  arrow -- React's own `<svg>` among them. The next render of that menu called `removeChild`
+  on a node that was no longer there, the router's error boundary caught it, and the page went
+  blank. The arrow is hidden with CSS now and the node is left to React.
+- **The sort stopped working.** Jellyfin 12's library view fetches `/Items` through the SDK,
+  which is axios, which is `XMLHttpRequest` -- the browser-side `fetch` hook never saw it, and
+  all that was left was a fallback that reordered the cards on screen from whatever ratings
+  happened to be cached. That sorted a page, not a library. `RatingOverrideMiddleware` now
+  answers `SortBy=UserRating` in the server, so the sort no longer depends on how a client
+  fetches; the fallback that reordered painted cards is gone.
+- **Picking *Personal rating* did nothing** until you left the view and came back. The entry
+  now closes the menu and writes the sort into the view's own state, so the library refetches
+  exactly as it does for a native sort entry.
+
+Ratings for the cover badges are harvested from `XMLHttpRequest` responses as well now, so they
+cover whatever the library view loaded instead of only the first 500 items the plugin fetched
+for itself.
+
 ## 1.3.0.0
 
 - Jellyfin 12 port: `net10.0`, `targetAbi` 12.0.0.0, `IUserManager.GetUsers()`.
