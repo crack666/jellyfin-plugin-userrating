@@ -6,3 +6,8 @@ obj/
 artifacts/
 *.zip
 dev/
+
+# Hygiene (globale CLAUDE.md): Backups und Env-Varianten nie committen
+*.bak*
+.env.*
+!.env.example
